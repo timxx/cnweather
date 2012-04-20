@@ -1,0 +1,30 @@
+#ifndef __CN_WEATHER_H__
+#define __CN_WEATHER_H__
+
+#include <gtk/gtk.h>
+
+#define TYPE_WEATHER_WINDOW             (weather_window_get_type())
+#define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_CNWEATHER_WINDOW, cnWeather))
+#define WEATHER_WINDOW_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
+#define IS_WEATHER_WINDOW(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_IMAGE_WINDOW))
+#define IS_WEATHER_WINDOW_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass), 	TYPE_WEATHER_WINDOW))
+#define WEATHER_WINDOW_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
+
+typedef struct _cnWeather       cnWeather;
+typedef struct _cnWeatherClass  cnWeatherClass;
+
+
+struct _cnWeather
+{
+    GtkWindow window;
+};
+
+struct _cnWeatherClass
+{
+    GtkWindowClass parent_class;
+};
+
+GtkWidget*  weather_window_new();
+GType       weather_window_get_type();
+
+#endif /* __CN_WEATHER_H__ */
