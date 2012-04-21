@@ -1,0 +1,10 @@
+cnWeather -> China Weather applicaton for Linux OS
+
+*HOW TO BUILD*
+
+./autogen.sh
+./configure
+make
+
+*INSTALL*
+make install

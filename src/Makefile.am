@@ -1,3 +1,5 @@
+SUBDIRS = lib test
+
 bin_PROGRAMS = cnWeather
 
 cnWeather_SOURCES =	\

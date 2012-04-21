@@ -28,7 +28,7 @@ AM_GLIB_GNU_GETTEXT
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([locale.h])
+AC_CHECK_HEADERS([string.h] [locale.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -39,10 +39,12 @@ AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 
 # Checks for libraries
 PKG_CHECK_MODULES(GTK, [gtk+-3.0 >= 3.2])
-
+PKG_CHECK_MODULES(LIBCURL, [libcurl])
 
 AC_CONFIG_FILES([Makefile
 		src/Makefile
+        src/lib/Makefile
+        src/test/Makefile
 		data/Makefile
 		po/Makefile.in
                  ])
