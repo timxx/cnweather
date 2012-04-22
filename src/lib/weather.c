@@ -179,6 +179,8 @@ static void parse_data(char *data, size_t len, WeatherInfo *wi)
 		wi->weather[i].wind = NULL;
 	}
 
+	get_value(data, len, "city", &wi->city);
+
     for(i=0; i<3; ++i)
     {
 		get_value(data, len, _temp[i],		&wi->weather[i].temperature);
@@ -235,6 +237,27 @@ static int get_value(const char *data, size_t len, const char *key, char **value
 	return 0;
 }
 
+WeatherInfo *weather_new_info()
+{
+	WeatherInfo *wi = NULL;
+	int i;
+
+	wi = (WeatherInfo*)malloc(sizeof(WeatherInfo));
+	if (wi == NULL)
+		return NULL;
+
+	for(i=0; i<3; i++)
+	{
+		wi->weather[i].temperature = 0;
+		wi->weather[i].weather = NULL;
+		wi->weather[i].wind = NULL;
+	}
+
+	wi->city = NULL;
+
+	return wi;
+}
+
 void weather_free_info(WeatherInfo *wi)
 {
 	if (wi)
@@ -251,6 +274,10 @@ void weather_free_info(WeatherInfo *wi)
 
 			if (wi->weather[i].wind)
 				free(wi->weather[i].wind);
+		}
+
+		if (wi->city){
+			free(wi->city);
 		}
 	}
 }

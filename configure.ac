@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([cnWeather], [0.1.0], [weitianleung@gmail.com], [cnweather], [https://github.com/timxx/cnWeather])
+AC_INIT([cnWeather], [0.1.0], [weitianleung@gmail.com], [cnWeather], [https://github.com/timxx/cnWeather])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE()
@@ -38,7 +38,7 @@ AC_TYPE_UINT64_T
 AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
 
 # Checks for libraries
-PKG_CHECK_MODULES(GTK, [gtk+-3.0 >= 3.2])
+PKG_CHECK_MODULES(GTK, [gtk+-3.0 >= 3.2, gmodule-export-2.0])
 PKG_CHECK_MODULES(LIBCURL, [libcurl])
 
 AC_CONFIG_FILES([Makefile
@@ -46,6 +46,8 @@ AC_CONFIG_FILES([Makefile
         src/lib/Makefile
         src/test/Makefile
 		data/Makefile
+		data/icons/Makefile
+		data/ui/Makefile
 		po/Makefile.in
                  ])
 

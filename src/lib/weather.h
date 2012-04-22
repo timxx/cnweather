@@ -7,7 +7,8 @@ export "C" {
 
 typedef struct
 {
-    unsigned int city_id;
+    unsigned int	city_id;
+	char*			city;
 
     struct
     {
@@ -69,8 +70,11 @@ weather_get(wSession *ws,
  */
 int weather_set_proxy(wSession *ws, ProxyInfo *pi);
 
+
+WeatherInfo *weather_new_info();
+
 /**
- * free WeatherInfo->weather only
+ * free WeatherInfo->weather & city only
  * @wi
  */
 void weather_free_info(WeatherInfo *wi);

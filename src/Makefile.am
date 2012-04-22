@@ -5,12 +5,16 @@ bin_PROGRAMS = cnWeather
 cnWeather_SOURCES =	\
 	cnWeather.c		\
 	main.c			\
-	tray.c
+	tray.c			\
+	builder.c		\
+	signal_handler.c
 
 AM_CFLAGS =	\
 		@GTK_CFLAGS@	\
 		-Wall -Werror	\
-		-DLOCALEDIR='"$(datadir)/locale"'
+		-DLOCALEDIR='"$(datadir)/locale"'	\
+		-DUI_DIR='"$(pkgdatadir)/ui"'
 
 cnWeather_LDADD =	\
-	@GTK_LIBS@
+	@GTK_LIBS@	\
+	lib/libweather.la

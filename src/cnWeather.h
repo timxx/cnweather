@@ -12,11 +12,12 @@
 
 typedef struct _cnWeather       cnWeather;
 typedef struct _cnWeatherClass  cnWeatherClass;
-
+typedef struct _cnWeatherPrivate cnWeatherPrivate;
 
 struct _cnWeather
 {
     GtkWindow window;
+	cnWeatherPrivate *priv;
 };
 
 struct _cnWeatherClass
@@ -26,5 +27,10 @@ struct _cnWeatherClass
 
 GtkWidget*  weather_window_new();
 GType       weather_window_get_type();
+
+void		weather_window_get_weather(cnWeather *window, unsigned int city_id);
+void		weather_window_set_page(cnWeather *window, int page);
+void		weather_window_search(cnWeather *window, gchar *city);
+void		weather_window_update(cnWeather *window);
 
 #endif /* __CN_WEATHER_H__ */

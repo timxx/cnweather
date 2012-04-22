@@ -1,0 +1,28 @@
+<theme
+	version="1.0"
+	author="Weitian Leung"
+	url="https://github.com/timxx/cnWeather/"
+	email="weitianleung@gmail.com"
+	>
+	<weather name="小雨" image="" />
+	<weather name="中雨" image="" />
+	<weather name="大雨" image="" />
+	<weather name="暴雨" image="" />
+	<weather name="晴" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+	<weather name="" image="" />
+</theme>
