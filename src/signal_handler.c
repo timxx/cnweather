@@ -8,6 +8,7 @@ static gboolean is_empty_text(const gchar *text);
 
 void on_button_preferences_clicked(GtkButton *button, gpointer data)
 {
+	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_PREFERENCES); 
 }
 
 void on_button_about_clicked(GtkButton *button, gpointer data)
@@ -17,7 +18,7 @@ void on_button_about_clicked(GtkButton *button, gpointer data)
 
 	if (widget == NULL)
 	{
-		builder = builder_new(UI_DIR"/about.glade");
+		builder = builder_new(UI_DIR"/about.ui");
 		if (builder == NULL)
 		{
 			g_warning("Missing about.glade ui file!\n");
@@ -94,4 +95,29 @@ static gboolean is_empty_text(const gchar *text)
 	}
 
 	return FALSE;
+}
+
+void on_pref_button_back_clicked(GtkButton *button, gpointer data)
+{
+	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
+}
+
+void on_pref_button_update_cache_clicked(GtkButton *button, gpointer data)
+{
+}
+
+void on_pref_cb_show_tray_toggled(GtkToggleButton *button, gpointer data)
+{
+	wSettings *sett;
+	gboolean state;
+
+	if (main_window == NULL)
+		return ;
+	
+	state = gtk_toggle_button_get_active(button);
+	sett = weather_window_get_settings(WEATHER_WINDOW(main_window));
+
+	g_print("state: %d | old: %d\n", state, w_settings_get_show_tray(sett));
+
+	w_settings_set_show_tray(sett, state);
 }

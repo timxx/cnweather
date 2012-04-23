@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+#include "wsettings.h"
+
 #define TYPE_WEATHER_WINDOW             (weather_window_get_type())
 #define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_WEATHER_WINDOW, cnWeather))
 #define WEATHER_WINDOW_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
@@ -13,6 +15,13 @@
 typedef struct _cnWeather       cnWeather;
 typedef struct _cnWeatherClass  cnWeatherClass;
 typedef struct _cnWeatherPrivate cnWeatherPrivate;
+
+enum
+{
+	PAGE_WEATHER = 0,
+	PAGE_SEARCH,
+	PAGE_PREFERENCES
+};
 
 struct _cnWeather
 {
@@ -33,5 +42,6 @@ void		weather_window_set_page(cnWeather *window, int page);
 void		weather_window_search(cnWeather *window, const gchar *city);
 void		weather_window_update(cnWeather *window);
 void		weather_window_set_search_result(cnWeather *window, const gchar *text);
+wSettings*	weather_window_get_settings(cnWeather *window);
 
 #endif /* __CN_WEATHER_H__ */

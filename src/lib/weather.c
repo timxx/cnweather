@@ -221,9 +221,8 @@ static int get_value(const char *data, size_t len, const char *key, char **value
 		p++; i++;
 	}
 
-	i = p - t;
-
-	*value = (char *)calloc(i, sizeof(char));
+	i = p - t; /* len to copy */
+	*value = (char *)calloc(i + sizeof(char), sizeof(char));
 	if (*value == NULL)
 		return -1;
 

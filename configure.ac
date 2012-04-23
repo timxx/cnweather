@@ -9,6 +9,8 @@ AM_INIT_AUTOMAKE()
 AM_MAINTAINER_MODE
 AC_CONFIG_HEADERS([config.h])
 
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -32,10 +34,11 @@ AC_CHECK_HEADERS([string.h] [locale.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
-AC_TYPE_UINT64_T
 
-# Checks for library functions.
-AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+# GSettings
+
+GLIB_GSETTINGS
+
 
 # Checks for libraries
 PKG_CHECK_MODULES(GTK, [gtk+-3.0 >= 3.2, gmodule-export-2.0])
@@ -48,6 +51,7 @@ AC_CONFIG_FILES([Makefile
 		data/Makefile
 		data/icons/Makefile
 		data/ui/Makefile
+		data/com.timxx.cnweather.gschema.xml.in
 		po/Makefile.in
                  ])
 

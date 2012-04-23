@@ -1,0 +1,59 @@
+<schemalist>
+	<schema gettext-domain="@GETTEXT_PACKAGE@" id="com.timxx.cnweather" path="/apps/cnweather/">
+		<key name="window-size" type="(ii)">
+			<default>(500,300)</default>
+			<_summary>Window size</_summary>
+			<_description>The width and height of window</_description>
+		</key>
+		<key name="window-pos" type="(ii)">
+			<default>(-1,-1)</default>
+			<_summary>Window position</_summary>
+			<_description>The last window position</_description>
+		</key>
+		<key name="city-id" type="i">
+			<default>0</default>
+			<_summary>City id</_summary>
+			<_description>Last city id for weather information</_description>
+		</key>
+		<key name="city" type="s">
+			<default>''</default>
+		</key>
+		<key name="duration" type="i">
+			<default>5</default>
+			<_summary>Refresh duration</_summary>
+			<_description>Duration to refresh weather</_description>
+		</key>
+		<key name="tray" type="b">
+			<default>true</default>
+			<_summary>System Tray</_summary>
+			<_description>Show system tray or not</_description>
+		</key>
+		<key name="weather1" type="s">
+			<default>''</default>
+		</key>
+		<key name="wind1" type="s">
+			<default>''</default>
+		</key>
+		<key name="temp1" type="s">
+			<default>''</default>
+		</key>
+		<key name="weather2" type="s">
+			<default>''</default>
+		</key>
+		<key name="wind2" type="s">
+			<default>''</default>
+		</key>
+		<key name="temp2" type="s">
+			<default>''</default>
+		</key>
+		<key name="weather3" type="s">
+			<default>''</default>
+		</key>
+		<key name="wind3" type="s">
+			<default>''</default>
+		</key>
+		<key name="temp3" type="s">
+			<default>''</default>
+		</key>
+	</schema>
+</schemalist>

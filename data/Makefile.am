@@ -1,14 +1,24 @@
 SUBDIRS = icons ui
 
 @INTLTOOL_DESKTOP_RULE@
-desktopdir = $(datadir)/applications
 desktop_in_files = cnWeather.desktop.in
-desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
+desktop_files = $(desktop_in_files:.desktop.in=.desktop)
+
+desktopdir = $(datadir)/applications
+desktop_DATA = $(desktop_files)
+
+@INTLTOOL_XML_NOMERGE_RULE@
+@GSETTINGS_RULES@
+
+gsettings_SCHEMAS = com.timxx.cnweather.gschema.xml
 
 EXTRA_DIST =	\
 	$(icon_DATA)	\
 	$(desktop_DATA)
 
+DISTCLEANFILES =	\
+	$(desktop_files)	\
+	$(gsettings_SCHEMAS)
 
 clean-local:
 	rm -f *~

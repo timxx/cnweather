@@ -1,6 +1,7 @@
 uidir = $(pkgdatadir)/ui
 ui_DATA =	\
-	about.glade	\
-	main.glade	\
-	search.glade	\
-	weather.glade
+	about.ui	\
+	main.ui		\
+	search.ui	\
+	weather.ui	\
+	preferences.ui
