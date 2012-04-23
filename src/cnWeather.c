@@ -3,6 +3,7 @@
 #include "config.h"
 #include "builder.h"
 #include "lib/weather.h"
+#include "tray.h"
 
 #define WEATHER_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), weather_window_get_type(), cnWeatherPrivate))
 
@@ -18,15 +19,20 @@ typedef struct _cnWeatherPrivate
 	GThread*		thread_get_weather;
 	GThread*		thread_get_city;
 
+	WeatherTray*	tray;
+
 }cnWeatherPrivate;
 
 static void weather_window_init(cnWeather *window);
 static void weather_window_class_init(cnWeatherClass *klass);
-static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer data);
+static void weather_window_finalize(GObject *obj);
+
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data);
 
 static gpointer get_weather_thread(gpointer data);
 static gpointer search_city_thread(gpointer data);
+
+static void update_tray_tooltips(cnWeather *window);
 
 GType weather_window_get_type()
 {
@@ -60,6 +66,8 @@ GtkWidget* weather_window_new()
 
 static void weather_window_init(cnWeather *window)
 {
+	cnWeatherPrivate *priv;
+
     GtkIconTheme *icon_theme;
 	GtkWidget	 *box_main;
 	GtkWidget	 *first_page, *second_page;
@@ -71,30 +79,34 @@ static void weather_window_init(cnWeather *window)
 		g_error("window->priv == NULL!!!");
 	}
 
-	window->priv->weather = weather_new_info();
-	if (window->priv->weather == NULL)
+	priv = window->priv;
+
+	priv->weather = weather_new_info();
+	if (priv->weather == NULL)
 	{
 		g_error("failed to molloc memory!(%s, %d)\n", __FILE__, __LINE__);
 	}
 
-	window->priv->thread_get_weather = NULL;
-	window->priv->thread_get_city = NULL;
+	priv->tray = NULL;
 
-	window->priv->ui_main = builder_new(UI_DIR"/main.glade");
-	window->priv->ui_search = builder_new(UI_DIR"/search.glade");
-	window->priv->ui_weather = builder_new(UI_DIR"/weather.glade");
+	priv->thread_get_weather = NULL;
+	priv->thread_get_city = NULL;
 
-	if (window->priv->ui_main == NULL ||
-		window->priv->ui_search == NULL ||
-		window->priv->ui_weather == NULL)
+	priv->ui_main = builder_new(UI_DIR"/main.glade");
+	priv->ui_search = builder_new(UI_DIR"/search.glade");
+	priv->ui_weather = builder_new(UI_DIR"/weather.glade");
+
+	if (priv->ui_main == NULL ||
+		priv->ui_search == NULL ||
+		priv->ui_weather == NULL)
 	{
 		g_error("UI files missing!\n");
 	}
 
-	box_main = builder_get_widget(window->priv->ui_main, "box_main");
-	first_page = builder_get_widget(window->priv->ui_weather, "box_weather");
-	second_page = builder_get_widget(window->priv->ui_search, "box_search");
-	note_book = builder_get_widget(window->priv->ui_main, "note_book");
+	box_main = builder_get_widget(priv->ui_main, "box_main");
+	first_page = builder_get_widget(priv->ui_weather, "box_weather");
+	second_page = builder_get_widget(priv->ui_search, "box_search");
+	note_book = builder_get_widget(priv->ui_main, "note_book");
 
 	if (box_main == NULL || first_page == NULL ||
 		second_page == NULL || note_book == NULL)
@@ -103,7 +115,8 @@ static void weather_window_init(cnWeather *window)
 	}
 
     gtk_window_set_title(GTK_WINDOW(window), _("cnWeather"));
-	gtk_window_set_default_size(GTK_WINDOW(window), 450, 300);
+	gtk_window_set_default_size(GTK_WINDOW(window), 500, 300);
+	gtk_widget_set_size_request(GTK_WIDGET(window), 500, 250);
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
     gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
 
@@ -120,6 +133,8 @@ static void weather_window_init(cnWeather *window)
         }
     }
 
+	priv->tray = weather_tray_new();
+
 	gtk_notebook_append_page(GTK_NOTEBOOK(note_book), first_page, NULL);
 	gtk_notebook_append_page(GTK_NOTEBOOK(note_book), second_page, NULL);
 
@@ -128,28 +143,51 @@ static void weather_window_init(cnWeather *window)
 	gtk_container_add(GTK_CONTAINER(window), box_main);
 
     g_signal_connect(window, "delete-event", G_CALLBACK(on_delete), NULL);
-    g_signal_connect(window, "draw", G_CALLBACK(on_draw), NULL);
 
-	weather_window_get_weather(window, 101070101);
+	weather_window_get_weather(window, 0);
 }
 
 static void weather_window_class_init(cnWeatherClass *klass)
 {
+	GObjectClass *obj_class = (GObjectClass *)klass;
+//	GtkWidgetClass *widget_class = (GtkWidgetClass *)klass;
+
+	obj_class->finalize = weather_window_finalize;
+
     g_type_class_add_private(G_OBJECT_CLASS(klass), sizeof(cnWeatherPrivate));
 }
 
-static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer data)
+static void weather_window_finalize(GObject *obj)
 {
-    return FALSE;
+	cnWeather *window = WEATHER_WINDOW(obj);
+	cnWeatherPrivate *priv = window->priv;
+
+	weather_free_info(priv->weather);
+	if (priv->weather)
+		g_free(priv->weather);
+
+	if (priv->thread_get_weather)
+		g_thread_unref(priv->thread_get_weather);
+	if (priv->thread_get_city)
+		g_thread_unref(priv->thread_get_city);
+
+	if (priv->ui_main)
+		g_object_unref(priv->ui_main);
+	if (priv->ui_weather)
+		g_object_unref(priv->ui_weather);
+	if (priv->ui_search)
+		g_object_unref(priv->ui_search);
 }
 
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
-    GtkApplication *app;
+	cnWeather *window = WEATHER_WINDOW(widget);
+	cnWeatherPrivate *priv = window->priv;
 
-    app = gtk_window_get_application(GTK_WINDOW(widget));
+	if (priv->tray)
+		g_object_unref(priv->tray);
 
-    g_application_quit(G_APPLICATION(app));
+	gtk_widget_destroy(widget);
 
     return FALSE;
 }
@@ -182,13 +220,29 @@ void weather_window_set_page(cnWeather *window, int page)
 	gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), page);
 }
 
-void weather_window_search(cnWeather *window, gchar *city)
+void weather_window_search(cnWeather *window, const gchar *city)
 {
-	g_return_if_fail( window != NULL );
+	cnWeatherPrivate *priv;
+
+	g_return_if_fail( window != NULL && city != NULL);
+	priv = window->priv;
+
+	if (priv->weather->city != NULL)
+	{
+		g_free(priv->weather->city);
+		priv->weather->city = NULL;
+	}
+
+	priv->weather->city = g_strdup(city);
+	if (priv->weather->city == NULL)
+	{
+		g_warning("g_strdup failed (%s, %d)", __FILE__, __LINE__);
+		return ;
+	}
 
 	if (g_thread_supported())
 	{
-		window->priv->thread_get_city = g_thread_new("GetCity",
+		priv->thread_get_city = g_thread_new("GetCity",
 					&search_city_thread, window);
 	}
 	else
@@ -204,22 +258,40 @@ static gpointer get_weather_thread(gpointer data)
 
 	g_debug("geting weather\n");
 
-	ws = weather_open();
-	if (ws == NULL)
-		return NULL;
-
-	if (weather_get(ws, window->priv->city_id, window->priv->weather) == 0)
+	do
 	{
-		weather_window_update(window);
+		int ret;
+		ws = weather_open();
+		if (ws == NULL)
+			break;
+
+		if (window->priv->city_id == 0)
+			ret = weather_get_default_city(ws, window->priv->weather);
+		else
+			ret = weather_get(ws, window->priv->city_id, window->priv->weather);
+
+		if (ret == 0)
+		{
+			window->priv->city_id = window->priv->weather->city_id;
+			weather_window_update(window);
+		}
+		else
+		{
+			g_debug("failed to get weather\n");
+		}
+	
+		g_debug("geting weather finished\n");
+
+		weather_close(ws);
 	}
-	else
+	while(0);
+
+
+	if (window->priv->thread_get_weather)
 	{
-		g_debug("failed to get weather\n");
+		g_thread_unref(window->priv->thread_get_weather);
+		window->priv->thread_get_weather = NULL;
 	}
-
-	g_debug("geting weather finished\n");
-
-	weather_close(ws);
 
 	return NULL;
 }
@@ -232,11 +304,12 @@ static gpointer search_city_thread(gpointer data)
 void weather_window_update(cnWeather *window)
 {
 	GtkWidget *widget;
+	cnWeatherPrivate *priv;
 
 	static const char *label[]=
 	{
 		"label_city", "image_weather", "label_weather",
-		"label_temperature", "label_wind"
+		"label_temperature"
 	};
 
 	int i;
@@ -245,36 +318,76 @@ void weather_window_update(cnWeather *window)
 
 	g_return_if_fail( window != NULL );
 
+	priv = window->priv;
+
+	widget = builder_get_widget(priv->ui_weather, label[0]);
+	if (widget) {
+		gtk_label_set_text(GTK_LABEL(widget), priv->weather->city);
+	}
 
 	for(i=0; i<3; ++i)
 	{
-		snprintf(widget_name, 30, "%s%d", label[0], i+1);
-		widget = builder_get_widget(window->priv->ui_weather, widget_name);
-		if (widget){
-			gtk_label_set_text(GTK_LABEL(widget), window->priv->weather->city);
-		}
-
 		snprintf(widget_name, 30, "%s%d", label[1], i+1);
-		widget = builder_get_widget(window->priv->ui_weather, widget_name);
-		if (widget) {
+		widget = builder_get_widget(priv->ui_weather, widget_name);
+		if (widget)
+		{
+			gtk_image_set_from_stock(GTK_IMAGE(widget), GTK_STOCK_FIND, GTK_ICON_SIZE_DIALOG);
+			gtk_widget_set_tooltip_text(widget, priv->weather->weather[i].wind);
 		}
 
 		snprintf(widget_name, 30, "%s%d", label[2], i+1);
-		widget = builder_get_widget(window->priv->ui_weather, widget_name);
+		widget = builder_get_widget(priv->ui_weather, widget_name);
 		if (widget){
-			gtk_label_set_text(GTK_LABEL(widget), window->priv->weather->weather[i].weather);
-		}
-		
-		snprintf(widget_name, 30, "%s%d", label[3], i+1);
-		widget = builder_get_widget(window->priv->ui_weather, widget_name);
-		if (widget){
-			gtk_label_set_text(GTK_LABEL(widget), window->priv->weather->weather[i].temperature);
+			gtk_label_set_text(GTK_LABEL(widget), priv->weather->weather[i].weather);
 		}
 
-		snprintf(widget_name, 30, "%s%d", label[4], i+1);
-		widget = builder_get_widget(window->priv->ui_weather, widget_name);
+		snprintf(widget_name, 30, "%s%d", label[3], i+1);
+		widget = builder_get_widget(priv->ui_weather, widget_name);
 		if (widget){
-			gtk_label_set_text(GTK_LABEL(widget), window->priv->weather->weather[i].wind);
+			gtk_label_set_text(GTK_LABEL(widget), priv->weather->weather[i].temperature);
 		}
 	}
+
+	update_tray_tooltips(window);
+}
+
+void weather_window_set_search_result(cnWeather *window, const gchar *text)
+{
+	GtkWidget *label;
+
+	g_return_if_fail(window != NULL && text != NULL);
+
+	label = builder_get_widget(window->priv->ui_search, "label_result");
+	if (label) {
+		gtk_label_set_text(GTK_LABEL(label), text);
+
+	}
+}
+
+static void update_tray_tooltips(cnWeather *window)
+{
+	cnWeatherPrivate *priv;
+
+	gchar tooltips[100];
+
+	g_return_if_fail(window != NULL);
+
+	priv = window->priv;
+
+	if (window->priv->tray == NULL)
+		return ;
+
+	snprintf(tooltips, 100,
+				"<b>%s</b>\n"
+				"%s\n"
+				"%s\n"
+				"%s\n"
+				,
+				priv->weather->city,
+				priv->weather->weather[0].weather,
+				priv->weather->weather[0].temperature,
+				priv->weather->weather[0].wind
+			);
+
+	weather_tray_set_tooltips(priv->tray, tooltips);
 }

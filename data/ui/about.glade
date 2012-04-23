@@ -28,7 +28,6 @@ Weather Information  comes from http://www.weather.com.cn</property>
     <property name="authors">Weitian Leung &lt;weitianleung@gmail.com&gt;</property>
     <property name="documenters"></property>
     <property name="logo_icon_name">cnWeather</property>
-    <property name="license_type">gpl-3-0</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="aboutdialog-vbox1">
         <property name="can_focus">False</property>

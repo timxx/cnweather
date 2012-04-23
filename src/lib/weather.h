@@ -63,6 +63,15 @@ weather_get(wSession *ws,
             WeatherInfo *wi);
 
 /**
+ * try to get weather by current ip adrress
+ * @ws
+ * @wi
+ * @return
+ */
+int
+weather_get_default_city(wSession *ws,
+			WeatherInfo *wi);
+/**
  * set proxy for session
  * @ws
  * @pi

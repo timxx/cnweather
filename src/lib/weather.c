@@ -27,10 +27,14 @@ static const char *_wind[] = {
 static const char *_agent = "cnWeather/0.1";
 //static const char *_city_list_url = "http://www.weather.com.cn/data/list3/city";
 static const char *_weather_data_url = "http://m.weather.com.cn/data/";
+static const char *_default_city_url = "http://61.4.185.48:81/g";
 
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
 static void parse_data(char *data, size_t len, WeatherInfo *wi);
 static int get_value(const char *data, size_t len, const char *key, char **value);
+static unsigned int get_default_city_id();
+
+static int get_url_data(wSession *ws, const char *url);
 
 wSession* weather_open()
 {
@@ -79,33 +83,24 @@ int weather_get(wSession *ws,
 
     snprintf(url, 250, "%s%d.html", _weather_data_url, city_id);
 
-    do
-    {
-        ret = curl_easy_setopt(ws->curl, CURLOPT_URL, url);
-        if (ret != CURLE_OK)
-            break;
-
-        ret = curl_easy_setopt(ws->curl, CURLOPT_HTTPGET, 1);
-        if (ret != CURLE_OK)
-            break;
-
-        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEFUNCTION, &write_func);
-		if (ret != CURLE_OK)
-            break;
-
-        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEDATA, ws);
-        if (ret != CURLE_OK)
-            break;
-
-        ret = curl_easy_perform(ws->curl);
-    }
-    while(0);
+	ret = get_url_data(ws, url);
 
     wi->city_id = city_id;
     if (ret == CURLE_OK)
         parse_data(ws->buffer, ws->length, wi);
 
     return ret;
+}
+
+int weather_get_default_city(wSession *ws, WeatherInfo *wi)
+{
+	unsigned int id;
+
+	id = get_default_city_id();
+	if (id == 0)
+		return -1;
+
+	return weather_get(ws, id, wi);
 }
 
 int weather_set_proxy(wSession *ws, ProxyInfo *pi)
@@ -253,6 +248,7 @@ WeatherInfo *weather_new_info()
 		wi->weather[i].wind = NULL;
 	}
 
+	wi->city_id = 0;
 	wi->city = NULL;
 
 	return wi;
@@ -280,4 +276,79 @@ void weather_free_info(WeatherInfo *wi)
 			free(wi->city);
 		}
 	}
+}
+
+static unsigned int get_default_city_id()
+{
+	unsigned int id = 0;
+	wSession *ws;
+	char *p, *t;
+
+	ws = weather_open();
+	if (ws == NULL)
+		return 0;
+
+	do
+	{
+		if (get_url_data(ws, _default_city_url) != 0)
+			break;
+		
+		if (ws->buffer == NULL || ws->length == 0)
+			break;
+		
+		p = strstr(ws->buffer, "id");
+		if (p == NULL)
+			break;
+
+		while (p && !isdigit(*p))
+			p++;
+
+		if ( !p )
+			break;
+		t = p;
+
+		while(p && isdigit(*p))
+			p++;
+		if (p)
+			*p = 0;
+
+		id = atoi(t);
+	}
+	while(0);
+
+	weather_close(ws);
+
+	return id;
+}
+
+static int get_url_data(wSession *ws, const char *url)
+{
+	int ret = -1;
+    do
+    {
+        ret = curl_easy_setopt(ws->curl, CURLOPT_URL, url);
+        if (ret != CURLE_OK)
+            break;
+
+        ret = curl_easy_setopt(ws->curl, CURLOPT_HTTPGET, 1);
+        if (ret != CURLE_OK)
+            break;
+
+		curl_easy_setopt(ws->curl, CURLOPT_FOLLOWLOCATION, 1);
+
+        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEFUNCTION, &write_func);
+		if (ret != CURLE_OK)
+            break;
+
+        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEDATA, ws);
+        if (ret != CURLE_OK)
+            break;
+
+		curl_easy_setopt(ws->curl, CURLOPT_CONNECTTIMEOUT, 30);
+
+        ret = curl_easy_perform(ws->curl);
+    }
+    while(0);
+
+	return ret;
 }

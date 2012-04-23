@@ -4,6 +4,8 @@
 #include "config.h"
 #include "cnWeather.h"
 
+GtkWidget *main_window = NULL;
+
 static void on_activate(GtkApplication *app);
 
 int main(int argc, char **argv)
@@ -34,7 +36,6 @@ int main(int argc, char **argv)
 static void on_activate(GtkApplication *app)
 {
     GList *list;
-    GtkWidget *window;
     list = gtk_application_get_windows(app);
 
     if (list)
@@ -43,13 +44,12 @@ static void on_activate(GtkApplication *app)
     }
     else
     {
-        window = weather_window_new();
-        if (window == NULL)
+        main_window = weather_window_new();
+        if (main_window == NULL)
         {
             g_error("cnWeather: Unable to create main window(%s, %d)\n", __FILE__, __LINE__);
-            return ;
         }
-        gtk_window_set_application(GTK_WINDOW(window), app);
-        gtk_widget_show_all(window);
+        gtk_window_set_application(GTK_WINDOW(main_window), app);
+        gtk_widget_show_all(main_window);
     }
 }

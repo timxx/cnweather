@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 
 #define TYPE_WEATHER_WINDOW             (weather_window_get_type())
-#define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_CNWEATHER_WINDOW, cnWeather))
+#define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_WEATHER_WINDOW, cnWeather))
 #define WEATHER_WINDOW_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
 #define IS_WEATHER_WINDOW(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_IMAGE_WINDOW))
 #define IS_WEATHER_WINDOW_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass), 	TYPE_WEATHER_WINDOW))
@@ -30,7 +30,8 @@ GType       weather_window_get_type();
 
 void		weather_window_get_weather(cnWeather *window, unsigned int city_id);
 void		weather_window_set_page(cnWeather *window, int page);
-void		weather_window_search(cnWeather *window, gchar *city);
+void		weather_window_search(cnWeather *window, const gchar *city);
 void		weather_window_update(cnWeather *window);
+void		weather_window_set_search_result(cnWeather *window, const gchar *text);
 
 #endif /* __CN_WEATHER_H__ */
