@@ -19,10 +19,17 @@ typedef struct _cnWeatherPrivate
 
 	GThread*		thread_get_weather;
 	GThread*		thread_get_city;
+	GThread*		thread_get_db;
 
 	WeatherTray*	tray;
 
 	wSettings*		settings;
+
+	gboolean		is_maximized;
+
+	gchar*			db_file;
+
+	gboolean		quit_from_tray;
 
 }cnWeatherPrivate;
 
@@ -34,6 +41,7 @@ static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data);
 
 static gpointer get_weather_thread(gpointer data);
 static gpointer search_city_thread(gpointer data);
+static gpointer get_cities_db_thread(gpointer data);
 
 static void update_tray_tooltips(cnWeather *window);
 
@@ -43,6 +51,12 @@ static void save_settings(cnWeather *window);
 static void set_preferences_page(cnWeather *window);
 
 static gboolean check_auto_start(cnWeather *window);
+
+static gboolean on_window_state(GtkWidget *widget,
+			GdkEventWindowState  *event,
+			gpointer   data);
+
+static gint confirm_dialog(GtkWidget *parent, const gchar *msg, const gchar *title);
 
 GType weather_window_get_type()
 {
@@ -98,9 +112,11 @@ static void weather_window_init(cnWeather *window)
 	}
 
 	priv->tray = NULL;
+	priv->quit_from_tray = FALSE;
 
 	priv->thread_get_weather = NULL;
 	priv->thread_get_city = NULL;
+	priv->thread_get_db = NULL;
 
 	priv->settings = w_settings_new();
 
@@ -162,11 +178,30 @@ static void weather_window_init(cnWeather *window)
 	gtk_container_add(GTK_CONTAINER(window), box_main);
 
     g_signal_connect(window, "delete-event", G_CALLBACK(on_delete), NULL);
+	g_signal_connect(window, "window-state-event", G_CALLBACK(on_window_state), NULL);
 
 	priv->city_id = 0;
 	load_settings(window);
 
 	weather_window_get_weather(window, priv->city_id);
+
+	priv->db_file = g_strdup_printf("%s/%s/data/cities.db", g_get_user_config_dir(), PACKAGE_NAME);
+	if (priv->db_file == NULL)
+		g_warning("failed to alloc memory (%s, %d)\n", __FILE__, __LINE__);
+	else
+	{
+		if (!g_file_test(priv->db_file, G_FILE_TEST_EXISTS))
+		{
+			gchar *tmp = g_strdup_printf("%s/%s/data/", g_get_user_config_dir(), PACKAGE_NAME);
+			if (tmp)
+			{
+				if (g_mkdir_with_parents(tmp, 0744) == 0)
+					priv->thread_get_db = g_thread_new("GetCitisDb", &get_cities_db_thread, window);
+
+				g_free(tmp);
+			}
+		}
+	}
 }
 
 static void weather_window_class_init(cnWeatherClass *klass)
@@ -192,6 +227,8 @@ static void weather_window_finalize(GObject *obj)
 		g_thread_unref(priv->thread_get_weather);
 	if (priv->thread_get_city)
 		g_thread_unref(priv->thread_get_city);
+	if (priv->thread_get_db)
+		g_thread_unref(priv->thread_get_db);
 
 	if (priv->ui_main)
 		g_object_unref(priv->ui_main);
@@ -202,12 +239,39 @@ static void weather_window_finalize(GObject *obj)
 
 	if (priv->settings)
 		g_object_unref(priv->settings);
+
+	if (priv->db_file)
+		g_free(priv->db_file);
 }
 
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	cnWeather *window = WEATHER_WINDOW(widget);
 	cnWeatherPrivate *priv = window->priv;
+
+	if (!priv->quit_from_tray && priv->tray &&
+		gtk_status_icon_get_visible(GTK_STATUS_ICON(priv->tray)))
+	{
+		gtk_widget_hide(widget);
+
+		return TRUE;
+	}
+
+	priv->quit_from_tray = FALSE;
+
+	if (priv->thread_get_db)
+	{
+		gint response;
+
+		response = confirm_dialog(widget,
+						_("Getting city list data... Are you sure quit now?"),
+						_("Quit?")
+					);
+		if (response == GTK_RESPONSE_NO)
+		{
+			return TRUE;
+		}
+	}
 
 	save_settings(window);
 
@@ -328,6 +392,19 @@ static gpointer search_city_thread(gpointer data)
 	return NULL;
 }
 
+static gpointer get_cities_db_thread(gpointer data)
+{
+	cnWeather *window = (cnWeather*)data;
+	cnWeatherPrivate *priv = window->priv;
+
+	weather_get_city_list(priv->db_file);
+
+	g_thread_unref(priv->thread_get_db);
+	priv->thread_get_db = NULL;
+
+	return NULL;
+}
+
 void weather_window_update(cnWeather *window)
 {
 	GtkWidget *widget;
@@ -376,6 +453,8 @@ void weather_window_update(cnWeather *window)
 	}
 
 	update_tray_tooltips(window);
+
+	w_settings_set_weather(priv->settings, priv->weather);
 }
 
 void weather_window_set_search_result(cnWeather *window, const gchar *text)
@@ -452,10 +531,12 @@ static void load_settings(cnWeather *window)
 		gtk_window_move(GTK_WINDOW(window), x, y);
 	}
 
+	if (w_settings_get_window_state(priv->settings))
+		gtk_window_maximize(GTK_WINDOW(window));
+
 	if (w_settings_get_show_tray(priv->settings))
 	{
-		priv->tray = weather_tray_new();
-		update_tray_tooltips(window);
+		weather_window_show_tray(window, TRUE);
 	}
 	else
 	{
@@ -474,11 +555,16 @@ static void save_settings(cnWeather *window)
 
 	priv = window->priv;
 
-	gtk_window_get_position(GTK_WINDOW(window), &x, &y);
-	w_settings_set_window_pos(priv->settings, x, y);
+	w_settings_set_window_state(priv->settings, priv->is_maximized);
 
-	gtk_window_get_size(GTK_WINDOW(window), &x, &y);
-	w_settings_set_window_size(priv->settings, x, y);
+	if (!priv->is_maximized)
+	{
+		gtk_window_get_position(GTK_WINDOW(window), &x, &y);
+		w_settings_set_window_pos(priv->settings, x, y);
+
+		gtk_window_get_size(GTK_WINDOW(window), &x, &y);
+		w_settings_set_window_size(priv->settings, x, y);
+	}
 }
 
 static void set_preferences_page(cnWeather *window)
@@ -517,4 +603,72 @@ static void set_preferences_page(cnWeather *window)
 static gboolean check_auto_start(cnWeather *window)
 {
 	return FALSE;
+}
+
+static gboolean on_window_state(GtkWidget *widget,
+			GdkEventWindowState  *event,
+			gpointer   data
+			)
+{
+	cnWeather *window = WEATHER_WINDOW(widget);
+	cnWeatherPrivate *priv = window->priv;
+
+	if (event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) {
+		priv->is_maximized = TRUE;
+	}else{
+		priv->is_maximized = FALSE;
+	}
+
+	return FALSE;
+}
+
+void weather_window_show_tray(cnWeather *window, gboolean state)
+{
+	g_return_if_fail( window != NULL );
+
+	if (!state && window->priv->tray == NULL)
+		return ;
+
+	if (state)
+	{
+		if (window->priv->tray == NULL)
+		{
+			window->priv->tray = weather_tray_new();
+			weather_tray_set_main_window(window->priv->tray, GTK_WIDGET(window));
+			update_tray_tooltips(window);
+		}
+		else
+		{
+			gtk_status_icon_set_visible(GTK_STATUS_ICON(window->priv->tray), TRUE);
+		}
+	}
+	else
+	{
+		gtk_status_icon_set_visible(GTK_STATUS_ICON(window->priv->tray), FALSE);
+	}
+}
+
+static gint confirm_dialog(GtkWidget *parent, const gchar *msg, const gchar *title)
+{
+	GtkWidget *dialog;
+	gint result;
+
+	dialog = gtk_message_dialog_new(GTK_WINDOW(parent),
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_YES_NO,
+                msg,
+				NULL);
+
+	gtk_window_set_title(GTK_WINDOW(dialog), title);
+	result = gtk_dialog_run(GTK_DIALOG(dialog));
+	gtk_widget_destroy(dialog);
+
+	return result;
+}
+
+void weather_window_quit(cnWeather *window)
+{
+	window->priv->quit_from_tray = TRUE;
+	on_delete(GTK_WIDGET(window), NULL, NULL);
 }

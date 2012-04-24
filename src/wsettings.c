@@ -159,3 +159,17 @@ gboolean w_settings_set_duration(wSettings *sett, gint t)
 	return g_settings_set_int(G_SETTINGS(sett), "duration", t);
 }
 
+gboolean w_settings_get_window_state(wSettings *sett)
+{
+	g_return_val_if_fail(sett != NULL, FALSE);
+
+	return g_settings_get_boolean(G_SETTINGS(sett), "window-maximized");
+}
+
+gboolean w_settings_set_window_state(wSettings *sett, gboolean value)
+{
+	g_return_val_if_fail(sett != NULL, FALSE);
+
+	return g_settings_set_boolean(G_SETTINGS(sett), "window-maximized", value);
+}
+

@@ -10,6 +10,15 @@
 			<_summary>Window position</_summary>
 			<_description>The last window position</_description>
 		</key>
+		<key name="window-maximized" type="b">
+			<default>false</default>
+			<_summary>Is window maximized</_summary>
+			<_description>The last state of window</_description>
+		</key>
+		<key name="theme" type="s">
+			<default>'default'</default>
+			<_summary>Icon theme for weather</_summary>
+		</key>
 		<key name="city-id" type="i">
 			<default>0</default>
 			<_summary>City id</_summary>
@@ -24,7 +33,7 @@
 			<_description>Duration to refresh weather</_description>
 		</key>
 		<key name="tray" type="b">
-			<default>true</default>
+			<default>false</default>
 			<_summary>System Tray</_summary>
 			<_description>Show system tray or not</_description>
 		</key>

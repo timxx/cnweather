@@ -28,4 +28,6 @@ GType			weather_tray_get_type();
 void	weather_tray_set_tooltips(WeatherTray *tray, const gchar *text);
 void	weather_tray_set_icon(WeatherTray *tray, const gchar *icon);
 
+void	weather_tray_set_main_window(WeatherTray *tray, GtkWidget *window);
+
 #endif

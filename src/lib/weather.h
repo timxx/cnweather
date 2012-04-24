@@ -5,16 +5,18 @@
 export "C" {
 #endif
 
+#include <glib.h>
+
 typedef struct
 {
-    unsigned int	city_id;
-	char*			city;
+    guint		city_id;
+	gchar*		city;
 
     struct
     {
-        char*   temperature;
-        char*   weather;
-        char*   wind;
+        gchar*   temperature;
+        gchar*   weather;
+        gchar*   wind;
     }
     weather[3];
 
@@ -27,11 +29,11 @@ typedef struct
 
 typedef struct
 {
-    int     type;
-    char*   server;
-    int     port;
-    char*   usr;
-    char*   pwd;
+    gint     type;
+    gchar*   server;
+    gint     port;
+    gchar*   usr;
+    gchar*   pwd;
 } ProxyInfo;
 
 typedef struct _wSession wSession;
@@ -57,9 +59,9 @@ weather_close(wSession *ws);
  * @wi weather info in return
  * @return 0 if no problem, failed other vaules
  */
-int
+gint
 weather_get(wSession *ws,
-            unsigned int city_id,
+            guint city_id,
             WeatherInfo *wi);
 
 /**
@@ -68,7 +70,7 @@ weather_get(wSession *ws,
  * @wi
  * @return
  */
-int
+gint
 weather_get_default_city(wSession *ws,
 			WeatherInfo *wi);
 /**
@@ -77,7 +79,7 @@ weather_get_default_city(wSession *ws,
  * @pi
  * @return 0 if OK
  */
-int weather_set_proxy(wSession *ws, ProxyInfo *pi);
+gint weather_set_proxy(wSession *ws, ProxyInfo *pi);
 
 
 WeatherInfo *weather_new_info();
@@ -87,6 +89,8 @@ WeatherInfo *weather_new_info();
  * @wi
  */
 void weather_free_info(WeatherInfo *wi);
+
+gint weather_get_city_list(const gchar *db_file);
 
 #ifdef __cplusplus
 }

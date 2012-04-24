@@ -1,46 +1,55 @@
 #include <curl/curl.h>
-#include <string.h> /* for memcpy strstr */
-#include <stdlib.h> /* for realloc, free*/
-#include <ctype.h>	/* for isdigit */
+#include <string.h>
+#include <sqlite3.h>
 
 #include "weather.h"
 
 struct _wSession
 {
-    char*   buffer;
+    gchar*   buffer;
     size_t  length;
     CURL*   curl;
 };
 
-static const char *_temp[] = {
+static const gchar *_temp[] = {
 	"temp1", "temp2", "temp3"
 };
 
-static const char *_weather[] = {
+static const gchar *_weather[] = {
 	"weather1", "weather2", "weather3"
 };
 
-static const char *_wind[] = {
+static const gchar *_wind[] = {
 	"wind1", "wind2", "wind3"
 };
 
-static const char *_agent = "cnWeather/0.1";
-//static const char *_city_list_url = "http://www.weather.com.cn/data/list3/city";
-static const char *_weather_data_url = "http://m.weather.com.cn/data/";
-static const char *_default_city_url = "http://61.4.185.48:81/g";
+static const gchar *_agent = "cnWeather/0.1";
+static const gchar *_city_list_url = "http://www.weather.com.cn/data/list3/city";
+static const gchar *_weather_data_url = "http://m.weather.com.cn/data/";
+static const gchar *_default_city_url = "http://61.4.185.48:81/g";
 
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
-static void parse_data(char *data, size_t len, WeatherInfo *wi);
-static int get_value(const char *data, size_t len, const char *key, char **value);
-static unsigned int get_default_city_id();
+static void parse_data(gchar *data, size_t len, WeatherInfo *wi);
+static gint get_value(const gchar *data, size_t len, const gchar *key, gchar **value);
+static guint get_default_city_id();
 
-static int get_url_data(wSession *ws, const char *url);
+static int get_url_data(wSession *ws, const gchar *url);
+
+static void get_city_list(gchar *parent_id, sqlite3 *db);
+static void get_city_id(gchar *id, gchar *name, gchar *parent_id, sqlite3 *db);
+
+static void init_db_tables(sqlite3 *db);
+static void insert_item_to_province(sqlite3 *db, gchar *id, gchar *name);
+static void insert_item_to_city(sqlite3 *db, gchar *id, gchar *name, gchar *pid);
+static void insert_item_to_town(sqlite3 *db, gchar *id, gchar *name, gchar *city_id, gchar *cid);
+
+static gint exe_sql(sqlite3 *db, gchar *sql);
 
 wSession* weather_open()
 {
     wSession *ws = NULL;
 
-    ws = (wSession *)calloc(1, sizeof(wSession));
+    ws = (wSession *)g_malloc0(sizeof(wSession));
     if( ws == NULL)
         return ws;
 
@@ -61,25 +70,32 @@ void weather_close(wSession *ws)
             curl_easy_cleanup(ws->curl);
 
         if (ws->buffer)
-            free(ws->buffer);
+            g_free(ws->buffer);
 
         ws->buffer = NULL;
         ws->length = 0;
         ws->curl = NULL;
 
-        free(ws);
+        g_free(ws);
     }
 }
 
 int weather_get(wSession *ws,
-            unsigned int city_id,
+            guint city_id,
             WeatherInfo *wi)
 {
-    char url[250];
-    int ret = CURLE_OK;
+    gchar url[250];
+    gint ret = CURLE_OK;
 
     if (ws == NULL || ws->curl == NULL || wi == NULL)
         return -1;
+
+	if (ws->buffer != NULL)
+	{
+		g_free(ws->buffer);
+		ws->buffer = NULL;
+		ws->length = 0;
+	}
 
     snprintf(url, 250, "%s%d.html", _weather_data_url, city_id);
 
@@ -92,9 +108,9 @@ int weather_get(wSession *ws,
     return ret;
 }
 
-int weather_get_default_city(wSession *ws, WeatherInfo *wi)
+gint weather_get_default_city(wSession *ws, WeatherInfo *wi)
 {
-	unsigned int id;
+	guint id;
 
 	id = get_default_city_id();
 	if (id == 0)
@@ -103,9 +119,9 @@ int weather_get_default_city(wSession *ws, WeatherInfo *wi)
 	return weather_get(ws, id, wi);
 }
 
-int weather_set_proxy(wSession *ws, ProxyInfo *pi)
+gint weather_set_proxy(wSession *ws, ProxyInfo *pi)
 {
-    int ret = CURLE_OK;
+    gint ret = CURLE_OK;
 
     if (ws == NULL || ws->curl ||
         pi == NULL || pi->server
@@ -144,7 +160,7 @@ static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data)
     if (ptr == NULL)
         return 0;
 
-    ws->buffer = (char*)realloc(ws->buffer, ws->length + real_size + 1);
+    ws->buffer = (char*)g_realloc(ws->buffer, ws->length + real_size + 1);
     if (ws->buffer == NULL)
         return 0;
 
@@ -157,7 +173,7 @@ static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data)
     return real_size;
 }
 
-static void parse_data(char *data, size_t len, WeatherInfo *wi)
+static void parse_data(gchar *data, size_t len, WeatherInfo *wi)
 {
     size_t i;
     
@@ -184,10 +200,10 @@ static void parse_data(char *data, size_t len, WeatherInfo *wi)
 	}
 }
 
-static int get_value(const char *data, size_t len, const char *key, char **value)
+static gint get_value(const gchar *data, size_t len, const gchar *key, gchar **value)
 {
 	size_t i;
-	const char *p, *t;
+	const gchar *p, *t;
 	
 	p = strstr(data, key);
 	if (p == NULL)
@@ -222,7 +238,7 @@ static int get_value(const char *data, size_t len, const char *key, char **value
 	}
 
 	i = p - t; /* len to copy */
-	*value = (char *)calloc(i + sizeof(char), sizeof(char));
+	*value = (gchar *)g_malloc0_n(i + sizeof(gchar), sizeof(gchar));
 	if (*value == NULL)
 		return -1;
 
@@ -234,9 +250,9 @@ static int get_value(const char *data, size_t len, const char *key, char **value
 WeatherInfo *weather_new_info()
 {
 	WeatherInfo *wi = NULL;
-	int i;
+	gint i;
 
-	wi = (WeatherInfo*)malloc(sizeof(WeatherInfo));
+	wi = (WeatherInfo*)g_malloc(sizeof(WeatherInfo));
 	if (wi == NULL)
 		return NULL;
 
@@ -257,31 +273,31 @@ void weather_free_info(WeatherInfo *wi)
 {
 	if (wi)
 	{
-		int i;
+		gint i;
 
 		for(i=0; i<3; ++i)
 		{
 			if (wi->weather[i].temperature)
-				free(wi->weather[i].temperature);
+				g_free(wi->weather[i].temperature);
 
 			if (wi->weather[i].weather)
-				free(wi->weather[i].weather);
+				g_free(wi->weather[i].weather);
 
 			if (wi->weather[i].wind)
-				free(wi->weather[i].wind);
+				g_free(wi->weather[i].wind);
 		}
 
 		if (wi->city){
-			free(wi->city);
+			g_free(wi->city);
 		}
 	}
 }
 
-static unsigned int get_default_city_id()
+static guint get_default_city_id()
 {
-	unsigned int id = 0;
+	guint id = 0;
 	wSession *ws;
-	char *p, *t;
+	gchar *p, *t;
 
 	ws = weather_open();
 	if (ws == NULL)
@@ -299,19 +315,19 @@ static unsigned int get_default_city_id()
 		if (p == NULL)
 			break;
 
-		while (p && !isdigit(*p))
+		while (p && !g_ascii_isdigit(*p))
 			p++;
 
 		if ( !p )
 			break;
 		t = p;
 
-		while(p && isdigit(*p))
+		while(p && g_ascii_isdigit(*p))
 			p++;
 		if (p)
 			*p = 0;
 
-		id = atoi(t);
+		id = g_strtod(t, NULL);
 	}
 	while(0);
 
@@ -320,9 +336,9 @@ static unsigned int get_default_city_id()
 	return id;
 }
 
-static int get_url_data(wSession *ws, const char *url)
+static gint get_url_data(wSession *ws, const gchar *url)
 {
-	int ret = -1;
+	gint ret = -1;
     do
     {
         ret = curl_easy_setopt(ws->curl, CURLOPT_URL, url);
@@ -350,4 +366,237 @@ static int get_url_data(wSession *ws, const char *url)
     while(0);
 
 	return ret;
+}
+
+gint weather_get_city_list(const gchar *db_file)
+{
+	sqlite3 *db = NULL;
+
+	if (sqlite3_open(db_file, &db) != SQLITE_OK)
+		return -1;
+
+	init_db_tables(db);
+
+	exe_sql(db, "BEGIN;");
+
+	get_city_list("", db);
+
+	exe_sql(db, "COMMIT;");
+
+	sqlite3_close(db);
+
+	return 0;
+}
+
+static void get_city_list(gchar *parent_id, sqlite3 *db)
+{
+	wSession *ws;
+
+	gchar **city_list = NULL;
+	gchar *url = NULL;
+	gint i;
+
+	ws = weather_open();
+	if (ws == NULL)
+		return ;
+
+	do
+	{
+		url = g_strdup_printf("%s%s.xml", _city_list_url, parent_id);
+		if (url == NULL)
+			break;
+
+		if (get_url_data(ws, url) != 0)
+			break;
+
+		if (ws->buffer == NULL || ws->length == 0)
+			break;
+
+		city_list = g_strsplit(ws->buffer, ",", 0);
+		if (city_list == NULL)
+			break;
+
+		i = 0;
+
+		while(city_list[i])
+		{
+			gchar **values;
+			gint len;
+
+			values = g_strsplit(city_list[i], "|", 0);
+			if (values == NULL)
+			{
+				i++;
+				continue;
+			}
+
+			len = strlen(values[0]);
+
+			switch(len)
+			{
+				case 2:
+					insert_item_to_province(db, values[0], values[1]);
+					get_city_list(values[0], db);
+
+					break;
+
+				case 4:
+					insert_item_to_city(db, values[0], values[1], parent_id);
+					get_city_list(values[0], db);
+
+					break;
+
+				case 6:
+					get_city_id(values[0], values[1], parent_id, db);
+					break;
+			}
+			
+			g_strfreev(values);
+
+			i++;
+		}
+
+	}
+	while(0);
+
+	if (city_list)
+		g_strfreev(city_list);
+
+	if (url)
+		g_free(url);
+
+	weather_close(ws);
+}
+
+static void get_city_id(gchar *id, gchar *name, gchar *parent_id, sqlite3 *db)
+{
+	wSession *ws;
+
+	gchar **values = NULL;
+	gchar *url = NULL;
+
+	ws = weather_open();
+	if (ws == NULL)
+		return ;
+
+	do
+	{
+		url = g_strdup_printf("%s%s.xml", _city_list_url, id);
+		if (url == NULL)
+			break;
+
+		if (get_url_data(ws, url) != 0)
+			break;
+
+		if (ws->buffer == NULL || ws->length == 0)
+			break;
+
+		values = g_strsplit(ws->buffer, "|", 0);
+		if (values == NULL)
+			break;
+
+		insert_item_to_town(db, id, name, values[1], parent_id);
+	}
+	while(0);
+
+	if (values)
+		g_strfreev(values);
+
+	if (url)
+		g_free(url);
+
+	weather_close(ws);
+}
+
+static void init_db_tables(sqlite3 *db)
+{
+	gchar *sql;
+
+	sql = "DROP TABLE IF EXISTS province";
+	exe_sql(db, sql);
+
+	sql = "DROP TABLE IF EXISTS city";
+	exe_sql(db, sql);
+
+	sql = "DROP TABLE IF EXISTS town";
+	exe_sql(db, sql);
+
+	sql = "CREATE TABLE province("
+				"pid VARCHAR(3) PRIMARY KEY, "
+				"pname VARCHAR(32)"
+				")"
+				;
+	exe_sql(db, sql);
+
+	sql = "CREATE TABLE city("
+				"cid VARCHAR(5) PRIMARY KEY, "
+				"cname VARCHAR(32), "
+				"pid VARCHAR(3), "
+				"FOREIGN KEY (pid) REFERENCES province(pid) "
+				"ON UPDATE CASCADE"
+				")"
+				;
+	exe_sql(db, sql);
+
+	sql =  "CREATE TABLE town("
+				"tid VARCHAR(7) PRIMARY KEY, "
+				"tname VARCHAR(32), "
+				"city_id VARCHAR(10), "
+				"cid VARCHAR(5), "
+				"FOREIGN KEY (cid) REFERENCES city(cid) "
+				"ON UPDATE CASCADE"
+				")"
+				;
+	exe_sql(db, sql);
+}
+
+static void insert_item_to_province(sqlite3 *db, gchar *id, gchar *name)
+{
+	gchar *sql;
+
+	sql = g_strdup_printf("INSERT INTO province values('%s', '%s')", id, name);
+
+	exe_sql(db, sql);
+
+	g_free(sql);
+}
+
+static void insert_item_to_city(sqlite3 *db, gchar *id, gchar *name, gchar *pid)
+{
+	gchar *sql;
+
+	sql = g_strdup_printf("INSERT INTO city values('%s', '%s', '%s')", id, name, pid);
+
+	exe_sql(db, sql);
+
+	g_free(sql);
+}
+
+static void insert_item_to_town(sqlite3 *db, gchar *id, gchar *name, gchar *city_id, gchar *cid)
+{
+	gchar *sql;
+
+	sql = g_strdup_printf("INSERT INTO town values('%s', '%s', '%s', '%s')", id, name, city_id, cid);
+
+	exe_sql(db, sql);
+
+	g_free(sql);
+}
+
+static gint exe_sql(sqlite3 *db, gchar *sql)
+{
+	gint result;
+	gchar *msg = NULL;
+
+	result = sqlite3_exec(db, sql, NULL, NULL, &msg);
+
+	if (result != SQLITE_OK)
+	{
+		g_print("Error: %s (%s, %d)\n", msg, __FILE__, __LINE__);
+		sqlite3_free(msg);
+
+		return -1;
+	}
+
+	return 0;
 }

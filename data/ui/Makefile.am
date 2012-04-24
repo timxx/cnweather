@@ -4,4 +4,5 @@ ui_DATA =	\
 	main.ui		\
 	search.ui	\
 	weather.ui	\
-	preferences.ui
+	preferences.ui	\
+	menu.ui

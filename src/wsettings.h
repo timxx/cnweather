@@ -41,4 +41,7 @@ gboolean	w_settings_set_window_pos(wSettings *sett, gint x, gint y);
 gint		w_settings_get_duration(wSettings *sett);
 gboolean	w_settings_set_duration(wSettings *sett, gint t);
 
+gboolean	w_settings_get_window_state(wSettings *sett);
+gboolean	w_settings_set_window_state(wSettings *sett, gboolean value);
+
 #endif

@@ -43,5 +43,8 @@ void		weather_window_search(cnWeather *window, const gchar *city);
 void		weather_window_update(cnWeather *window);
 void		weather_window_set_search_result(cnWeather *window, const gchar *text);
 wSettings*	weather_window_get_settings(cnWeather *window);
+void		weather_window_show_tray(cnWeather *window, gboolean state);
+
+void		weather_window_quit(cnWeather *window);
 
 #endif /* __CN_WEATHER_H__ */
