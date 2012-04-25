@@ -25,6 +25,7 @@
             <property name="use_action_appearance">False</property>
             <property name="image">image1</property>
             <property name="relief">none</property>
+            <signal name="clicked" handler="on_search_button_back_clicked" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -50,9 +51,10 @@
           <object class="GtkLabel" id="label_result">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
             <property name="position">0</property>
           </packing>

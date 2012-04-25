@@ -3,6 +3,8 @@
 #include "cnWeather.h"
 #include "builder.h"
 #include "config.h"
+#include "common.h"
+#include "intl.h"
 
 extern GtkWidget *main_window;
 
@@ -30,7 +32,6 @@ void on_search_entry_activate(GtkEntry *entry, gpointer data)
 	text = gtk_entry_get_text(entry);
 	if (is_empty_text(text))
 		return ;
-
 	weather_window_search(WEATHER_WINDOW(main_window), text);
 }
 
@@ -66,12 +67,12 @@ static gboolean is_empty_text(const gchar *text)
 	while(p && *p)
 	{
 		if (*p != ' '){
-			return TRUE;
+			return FALSE;
 		}
 		p++;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 void on_pref_button_back_clicked(GtkButton *button, gpointer data)
@@ -79,8 +80,22 @@ void on_pref_button_back_clicked(GtkButton *button, gpointer data)
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 }
 
+void on_search_button_back_clicked(GtkButton *button, gpointer data)
+{
+	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
+}
+
+
 void on_pref_button_update_cache_clicked(GtkButton *button, gpointer data)
 {
+	gint result;
+
+	result = confirm_dialog(main_window, 
+				_("Update will delete all the old cache! Really want to update?"), 
+				_("Attention!"));
+
+	if (result == GTK_RESPONSE_YES)
+		weather_window_update_cache(WEATHER_WINDOW(main_window));
 }
 
 void on_pref_cb_show_tray_toggled(GtkToggleButton *button, gpointer data)
@@ -202,4 +217,46 @@ static void do_about()
 
 	gtk_dialog_run(GTK_DIALOG(widget));
 	gtk_widget_hide(widget);
+}
+
+void on_pref_cb_province_changed(GtkComboBox *cb, gpointer data)
+{
+	gchar *province;
+
+	if (main_window == NULL)
+		return;
+
+	province = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
+	if (province != NULL)
+		weather_window_update_pref_cb(WEATHER_WINDOW(main_window), CB_CITY, province);
+}
+
+void on_pref_cb_city_changed(GtkComboBox *cb, gpointer data)
+{
+	gchar *city;
+
+	if (main_window == NULL)
+		return;
+
+	city = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
+	if (city != NULL)
+		weather_window_update_pref_cb(WEATHER_WINDOW(main_window), CB_TOWN, city);
+
+}
+
+void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
+{
+	if (main_window == NULL)
+		return; 
+}
+
+void on_pref_sp_duration_value_changed(GtkSpinButton *sb, gpointer data)
+{
+	gint duration;
+
+	if (main_window == NULL)
+		return; 
+
+	duration = gtk_spin_button_get_value_as_int(sb);
+	weather_window_set_duration(WEATHER_WINDOW(main_window), duration);
 }

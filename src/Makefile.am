@@ -8,7 +8,8 @@ cnWeather_SOURCES =	\
 	tray.c			\
 	builder.c		\
 	signal_handler.c	\
-	wsettings.c
+	wsettings.c	\
+	common.c
 
 AM_CFLAGS =	\
 		@GTK_CFLAGS@	\

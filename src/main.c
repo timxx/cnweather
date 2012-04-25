@@ -17,6 +17,11 @@ int main(int argc, char **argv)
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
     textdomain(GETTEXT_PACKAGE);
 
+	if (!g_thread_supported())
+		g_warning("gthread not supported!\n");
+
+	gdk_threads_init();
+	
     app = gtk_application_new("org.timxx.cnWeather", 0);
     if (app == NULL)
     {

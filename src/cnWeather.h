@@ -23,6 +23,13 @@ enum
 	PAGE_PREFERENCES
 };
 
+enum
+{
+	CB_PROVINCE = 0,
+	CB_CITY,
+	CB_TOWN
+};
+
 struct _cnWeather
 {
     GtkWindow window;
@@ -46,5 +53,10 @@ wSettings*	weather_window_get_settings(cnWeather *window);
 void		weather_window_show_tray(cnWeather *window, gboolean state);
 
 void		weather_window_quit(cnWeather *window);
+void		weather_window_update_cache(cnWeather *window);
+
+void		weather_window_set_duration(cnWeather *window, gint duration);
+
+void		weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name);
 
 #endif /* __CN_WEATHER_H__ */

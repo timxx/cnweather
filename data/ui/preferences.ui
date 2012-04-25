@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkBox" id="box_preferences">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -45,10 +50,13 @@
         <property name="margin_left">20</property>
         <property name="spacing">5</property>
         <child>
-          <object class="GtkComboBox" id="cb_province">
+          <object class="GtkComboBoxText" id="cb_province">
             <property name="width_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="entry_text_column">0</property>
+            <property name="id_column">1</property>
+            <signal name="changed" handler="on_pref_cb_province_changed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -57,10 +65,13 @@
           </packing>
         </child>
         <child>
-          <object class="GtkComboBox" id="cb_city">
+          <object class="GtkComboBoxText" id="cb_city">
             <property name="width_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="entry_text_column">0</property>
+            <property name="id_column">1</property>
+            <signal name="changed" handler="on_pref_cb_city_changed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -69,10 +80,13 @@
           </packing>
         </child>
         <child>
-          <object class="GtkComboBox" id="cb_country">
+          <object class="GtkComboBoxText" id="cb_town">
             <property name="width_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="entry_text_column">0</property>
+            <property name="id_column">1</property>
+            <signal name="changed" handler="on_pref_cb_town_changed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -126,6 +140,9 @@
             <property name="can_focus">True</property>
             <property name="invisible_char">•</property>
             <property name="invisible_char_set">True</property>
+            <property name="adjustment">adjustment1</property>
+            <property name="numeric">True</property>
+            <signal name="value-changed" handler="on_pref_sp_duration_value_changed" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
