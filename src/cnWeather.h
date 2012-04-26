@@ -44,19 +44,55 @@ struct _cnWeatherClass
 GtkWidget*  weather_window_new();
 GType       weather_window_get_type();
 
-void		weather_window_get_weather(cnWeather *window, unsigned int city_id);
+/**
+ * update weather by city_id
+ */
+void		weather_window_get_weather(cnWeather *window, guint city_id);
+
+/**
+ * set current page on main window
+ */
 void		weather_window_set_page(cnWeather *window, int page);
+
+/**
+ * search city from local database
+ */
 void		weather_window_search(cnWeather *window, const gchar *city);
+
+/**
+ * update weather information
+ */
 void		weather_window_update(cnWeather *window);
+
+/**
+ * only for text information
+ */
 void		weather_window_set_search_result(cnWeather *window, const gchar *text);
+
+/**
+ * return settings
+ */
 wSettings*	weather_window_get_settings(cnWeather *window);
+
+/**
+ * show/hide tray by state
+ */
 void		weather_window_show_tray(cnWeather *window, gboolean state);
 
 void		weather_window_quit(cnWeather *window);
 void		weather_window_update_cache(cnWeather *window);
 
+/**
+ * update duration (in minute)
+ * reset timer
+ */
 void		weather_window_set_duration(cnWeather *window, gint duration);
 
+/**
+ * update preferences page
+ * @cb: which combobox
+ * @name: parent city name
+ */
 void		weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name);
 
 #endif /* __CN_WEATHER_H__ */

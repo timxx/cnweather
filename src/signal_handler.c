@@ -12,16 +12,25 @@ static gboolean is_empty_text(const gchar *text);
 static void check_and_set_sys_tray();
 static void do_about();
 
+/**
+ * preferences button clicked
+ */
 void on_button_preferences_clicked(GtkButton *button, gpointer data)
 {
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_PREFERENCES); 
 }
 
+/**
+ * about button
+ */
 void on_button_about_clicked(GtkButton *button, gpointer data)
 {
 	do_about();
 }
 
+/**
+ * User press Enter key on search entry
+ */
 void on_search_entry_activate(GtkEntry *entry, gpointer data)
 {
 	const gchar *text;
@@ -35,6 +44,9 @@ void on_search_entry_activate(GtkEntry *entry, gpointer data)
 	weather_window_search(WEATHER_WINDOW(main_window), text);
 }
 
+/**
+ * search entry text changed
+ */
 void on_search_entry_changed(GtkEditable *edit, gpointer data)
 {
 	gboolean has_text;
@@ -45,6 +57,9 @@ void on_search_entry_changed(GtkEditable *edit, gpointer data)
 				has_text);
 }
 
+/**
+ * search entry
+ */
 void on_search_entry_icon_press(GtkEntry *entry,
 			gint position,
 			GdkEventButton *event,
@@ -75,17 +90,25 @@ static gboolean is_empty_text(const gchar *text)
 	return TRUE;
 }
 
+/**
+ * back button on preferences page
+ */
 void on_pref_button_back_clicked(GtkButton *button, gpointer data)
 {
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 }
 
+/**
+ * search result page
+ */
 void on_search_button_back_clicked(GtkButton *button, gpointer data)
 {
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 }
 
-
+/**
+ * preferences->update local cache
+ */
 void on_pref_button_update_cache_clicked(GtkButton *button, gpointer data)
 {
 	gint result;
@@ -98,6 +121,9 @@ void on_pref_button_update_cache_clicked(GtkButton *button, gpointer data)
 		weather_window_update_cache(WEATHER_WINDOW(main_window));
 }
 
+/**
+ * preferences->show tray
+ */
 void on_pref_cb_show_tray_toggled(GtkToggleButton *button, gpointer data)
 {
 	wSettings *sett;
@@ -117,6 +143,10 @@ void on_pref_cb_show_tray_toggled(GtkToggleButton *button, gpointer data)
 	weather_window_show_tray(WEATHER_WINDOW(main_window), state);
 }
 
+/**
+ * add self to panel white list if
+ * there isn't
+ */
 static void check_and_set_sys_tray()
 {
 	GSettings *sett;
@@ -224,7 +254,7 @@ void on_pref_cb_province_changed(GtkComboBox *cb, gpointer data)
 	gchar *province;
 
 	if (main_window == NULL)
-		return;
+		return ;
 
 	province = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
 	if (province != NULL)
@@ -236,27 +266,44 @@ void on_pref_cb_city_changed(GtkComboBox *cb, gpointer data)
 	gchar *city;
 
 	if (main_window == NULL)
-		return;
+		return ;
 
 	city = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
 	if (city != NULL)
 		weather_window_update_pref_cb(WEATHER_WINDOW(main_window), CB_TOWN, city);
-
 }
 
 void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
 {
+	const gchar *text;
+
 	if (main_window == NULL)
-		return; 
+		return ;
+
+	text = gtk_combo_box_get_active_id(cb);
+	if (text != NULL)
+	{
+		guint id = g_strtod(text, NULL);
+
+		weather_window_get_weather(WEATHER_WINDOW(main_window), id);
+	}
 }
 
 void on_pref_sp_duration_value_changed(GtkSpinButton *sb, gpointer data)
 {
 	gint duration;
-
+	
 	if (main_window == NULL)
-		return; 
+		return ;
 
 	duration = gtk_spin_button_get_value_as_int(sb);
 	weather_window_set_duration(WEATHER_WINDOW(main_window), duration);
+}
+
+/**
+ * preferences->auto start
+ */
+void on_pref_cb_auto_start_toggled(GtkToggleButton *button, gpointer data)
+{
+	g_print("NOT IMPLEMENTED YET\n");
 }
