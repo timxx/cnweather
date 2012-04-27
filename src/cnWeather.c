@@ -42,6 +42,8 @@ typedef struct _cnWeatherPrivate
 
 	guint			timer;	/* timer to repeatly gets weather */
 
+	gchar*			cur_theme;	/* current theme directory */
+
 }cnWeatherPrivate;
 
 static void weather_window_init(cnWeather *window);
@@ -58,9 +60,9 @@ static void		search_city(cnWeather *window);
 static gpointer get_cities_db_thread(gpointer data);
 
 /**
- * set tray tooltips from current weather information
+ * set tray icon/tooltips from current weather information
  */
-static void update_tray_tooltips(cnWeather *window);
+static void update_tray(cnWeather *window);
 
 static void load_settings(cnWeather *window);
 static void save_settings(cnWeather *window);
@@ -111,6 +113,17 @@ static gboolean delay_load_settings(gpointer data);
 static gboolean delay_get_weather(gpointer data);
 
 static gboolean get_weather_timer(gpointer data);
+
+static gchar*	get_theme_img_file(cnWeather *window, gint index);
+static gint get_cur_time_hour();
+
+/**
+ * searching themes and add to cb_themes
+ * @theme_dir: theme folder
+ * @count: count of cb_themes
+ * @return: themes found
+ */
+static gint set_theme_list(cnWeather *window, const gchar *theme_dir, gint count);
 
 GType weather_window_get_type()
 {
@@ -208,6 +221,7 @@ static void weather_window_init(cnWeather *window)
 
 	priv->ready_for_weather = FALSE;
 	priv->timer = 0;
+	priv->cur_theme = NULL;
 
 	priv->spinner = builder_get_widget(priv->ui_main, "sp_progress");
 
@@ -306,6 +320,9 @@ static void weather_window_finalize(GObject *obj)
 
 	if (priv->timer)
 		g_source_remove(priv->timer);
+
+	if (priv->cur_theme)
+		g_free(priv->cur_theme);
 }
 
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
@@ -539,7 +556,16 @@ void weather_window_update(cnWeather *window)
 		widget = builder_get_widget(priv->ui_weather, widget_name);
 		if (widget)
 		{
-			gtk_image_set_from_stock(GTK_IMAGE(widget), GTK_STOCK_FIND, GTK_ICON_SIZE_DIALOG);
+			gchar *img = get_theme_img_file(window, priv->weather->weather[i].img);
+			if (img)
+			{
+				gtk_image_set_from_file(GTK_IMAGE(widget), img);
+
+				g_free(img);
+			}
+			else
+				gtk_image_set_from_icon_name(GTK_IMAGE(widget), PACKAGE_NAME, GTK_ICON_SIZE_LARGE_TOOLBAR);
+
 			gtk_widget_set_tooltip_text(widget, priv->weather->weather[i].wind);
 		}
 
@@ -556,7 +582,7 @@ void weather_window_update(cnWeather *window)
 		}
 	}
 
-	update_tray_tooltips(window);
+	update_tray(window);
 
 	w_settings_set_weather(priv->settings, priv->weather);
 }
@@ -575,11 +601,11 @@ void weather_window_set_search_result(cnWeather *window, const gchar *text)
 	weather_window_set_page(window, PAGE_RESULT);
 }
 
-static void update_tray_tooltips(cnWeather *window)
+static void update_tray(cnWeather *window)
 {
 	cnWeatherPrivate *priv;
 
-	gchar tooltips[100];
+	gchar *buffer;
 
 	g_return_if_fail(window != NULL);
 
@@ -588,7 +614,7 @@ static void update_tray_tooltips(cnWeather *window)
 	if (window->priv->tray == NULL)
 		return ;
 
-	snprintf(tooltips, 100,
+	buffer = g_strdup_printf(
 				"<b>%s</b>\n"
 				"%s\n"
 				"%s\n"
@@ -600,7 +626,18 @@ static void update_tray_tooltips(cnWeather *window)
 				priv->weather->weather[0].wind
 			);
 
-	weather_tray_set_tooltips(priv->tray, tooltips);
+	if (buffer == NULL)
+		return ;
+
+	weather_tray_set_tooltips(priv->tray, buffer);
+	g_free(buffer);
+
+	buffer = get_theme_img_file(window, window->priv->weather->weather[0].img);
+	if (buffer)
+	{
+		weather_tray_set_icon(window->priv->tray, buffer);
+		g_free(buffer);
+	}
 }
 
 wSettings* weather_window_get_settings(cnWeather *window)
@@ -650,6 +687,16 @@ static void load_settings(cnWeather *window)
 		priv->tray = NULL;
 	}
 
+	priv->cur_theme = w_settings_get_theme(priv->settings);
+	if (priv->cur_theme == NULL)
+		priv->cur_theme = g_strdup_printf("%s/default", THEME_DIR);
+
+	if (g_utf8_strlen(priv->cur_theme, -1) == 0)
+	{
+		g_free(priv->cur_theme);
+		priv->cur_theme = g_strdup_printf("%s/default", THEME_DIR);
+	}
+
 	set_preferences_page(window);
 }
 
@@ -679,6 +726,8 @@ static void set_preferences_page(cnWeather *window)
 	GtkWidget *widget;
 	cnWeatherPrivate *priv;
 	gint duration;
+	gchar *dir;
+	gint count = 0;
 
 	priv = window->priv;
 
@@ -716,6 +765,15 @@ static void set_preferences_page(cnWeather *window)
 		weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
 		fill_pref_cb_by_town(window);
 	}
+
+	dir = g_strdup_printf("%s/%s/themes", g_get_user_config_dir(), PACKAGE_NAME);
+	if (dir)
+	{
+		count = set_theme_list(window, dir, 0);
+		g_free(dir);
+	}
+
+	set_theme_list(window, THEME_DIR, count);
 }
 
 static gboolean check_auto_start(cnWeather *window)
@@ -753,7 +811,7 @@ void weather_window_show_tray(cnWeather *window, gboolean state)
 		{
 			window->priv->tray = weather_tray_new();
 			weather_tray_set_main_window(window->priv->tray, GTK_WIDGET(window));
-			update_tray_tooltips(window);
+			update_tray(window);
 		}
 		else
 		{
@@ -1234,3 +1292,121 @@ void weather_window_hide_result_tv(cnWeather *window)
 		gtk_widget_set_visible(widget, FALSE);
 }
 
+static gchar* get_theme_img_file(cnWeather *window, gint index)
+{
+	cnWeatherPrivate *priv;
+	gchar *file = NULL;
+	gint hour;
+
+	g_return_val_if_fail(window != NULL, NULL);
+	if (window->priv->cur_theme == NULL)
+		return NULL;
+
+	priv = window->priv;
+
+	hour = get_cur_time_hour();
+	if ((hour >= 18 && hour <= 24) || (hour >= 0 && hour <= 6))
+		file =  g_strdup_printf("%s/n%02d.png", priv->cur_theme, index);
+	else
+		file =  g_strdup_printf("%s/%02d.png", priv->cur_theme, index);
+
+	g_return_val_if_fail(file != NULL, NULL);
+
+	if (!g_file_test(file, G_FILE_TEST_EXISTS))
+	{
+		if ((hour >= 18 && hour <= 24) || (hour >= 0 && hour <= 6))
+		{
+			g_free(file);
+			file = g_strdup_printf("%s/%02d.png", priv->cur_theme, index);
+			g_return_val_if_fail( file != NULL, NULL);
+
+			if (!g_file_test(file, G_FILE_TEST_EXISTS))
+			{
+				g_free(file);
+				return NULL;
+			}
+		}
+		else
+		{
+			g_free(file);
+			file = NULL;
+		}
+	}
+
+	return file;
+}
+
+static gint get_cur_time_hour()
+{
+	GDateTime *dt;
+	gint hour;
+
+	dt = g_date_time_new_now_local();
+	if (dt == NULL)
+		return 0;
+
+	hour = g_date_time_get_hour(dt);
+
+	g_date_time_unref(dt);
+
+	return hour;
+}
+
+static gint set_theme_list(cnWeather *window, const gchar *theme_dir, gint count)
+{
+	cnWeatherPrivate *priv;
+	GtkWidget *widget;
+
+    GDir *dir;
+    const gchar *name;
+    gchar *full_path;
+	gint i = 0;
+
+	g_return_val_if_fail(window != NULL, 0);
+	priv = window->priv;
+
+	widget = builder_get_widget(priv->ui_pref, "cb_themes");
+	if (widget == NULL)
+	{
+		g_warning("Missing widget cb_themes\n");
+		return 0;
+	}
+
+    dir = g_dir_open(theme_dir, 0, NULL);
+    if (NULL == dir)
+        return 0;
+
+    while((name = g_dir_read_name(dir)))
+    {
+        full_path = g_build_filename(theme_dir, name, NULL);
+        if (g_file_test(full_path, G_FILE_TEST_IS_DIR))
+        {
+			gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(widget), full_path, name);
+			if (g_strcmp0(full_path, priv->cur_theme) == 0)
+			{
+				gtk_combo_box_set_active(GTK_COMBO_BOX(widget), i + count);
+			}
+
+			i++;
+        }
+        g_free(full_path);
+    }
+
+    g_dir_close(dir);
+
+	return i;
+}
+
+void weather_window_set_theme(cnWeather *window, const gchar *theme)
+{
+	g_return_if_fail( window != NULL && theme != NULL);
+
+	if (window->priv->cur_theme)
+		g_free(window->priv->cur_theme);
+
+	window->priv->cur_theme = g_strdup(theme);
+
+	weather_window_get_weather(window, window->priv->city_id);
+
+	w_settings_set_theme(window->priv->settings, theme);
+}

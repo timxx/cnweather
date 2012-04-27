@@ -15,7 +15,8 @@ AM_CFLAGS =	\
 		@GTK_CFLAGS@	\
 		-Wall -Werror	\
 		-DLOCALEDIR='"$(datadir)/locale"'	\
-		-DUI_DIR='"$(pkgdatadir)/ui"'
+		-DUI_DIR='"$(pkgdatadir)/ui"'	\
+		-DTHEME_DIR='"$(pkgdatadir)/themes"'
 
 cnWeather_LDADD =	\
 	@GTK_LIBS@	\

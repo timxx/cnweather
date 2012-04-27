@@ -2,7 +2,7 @@
 
 static const gchar *_names[] =
 {
-	"weather", "wind", "temp"
+	"weather", "wind", "temp", "img"
 };
 
 static void w_settings_init(wSettings *sett);
@@ -83,6 +83,9 @@ gboolean w_settings_get_weather(wSettings *sett, WeatherInfo *wi)
 
 		g_snprintf(name, 10, "%s%d", _names[2], i + 1);
 		wi->weather[i].temperature = g_settings_get_string(G_SETTINGS(sett), name);
+
+		g_snprintf(name, 10, "%s%d", _names[3], i + 1);
+		wi->weather[i].img = g_settings_get_int(G_SETTINGS(sett), name);
 	}
 
 	return TRUE;
@@ -108,6 +111,9 @@ gboolean w_settings_set_weather(wSettings *sett, WeatherInfo *wi)
 
 		g_snprintf(name, 10, "%s%d", _names[2], i + 1);
 		g_settings_set_string(G_SETTINGS(sett), name, wi->weather[i].temperature);
+
+		g_snprintf(name, 10, "%s%d", _names[3], i + 1);
+		g_settings_set_int(G_SETTINGS(sett), name, wi->weather[i].img);
 	}
 
 	return TRUE;
@@ -171,5 +177,19 @@ gboolean w_settings_set_window_state(wSettings *sett, gboolean value)
 	g_return_val_if_fail(sett != NULL, FALSE);
 
 	return g_settings_set_boolean(G_SETTINGS(sett), "window-maximized", value);
+}
+
+gchar* w_settings_get_theme(wSettings *sett)
+{
+	g_return_val_if_fail(sett != NULL, NULL);
+
+	return g_settings_get_string(G_SETTINGS(sett), "theme");
+}
+
+gboolean w_settings_set_theme(wSettings *sett, const gchar *theme)
+{
+	g_return_val_if_fail(sett != NULL, FALSE);
+
+	return g_settings_set_string(G_SETTINGS(sett), "theme", theme);
 }
 

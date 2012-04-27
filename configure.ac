@@ -55,6 +55,8 @@ AC_CONFIG_FILES([Makefile
 		data/ui/Makefile
 		data/com.timxx.cnweather.gschema.xml.in
 		po/Makefile.in
+		data/themes/Makefile
+		data/themes/default/Makefile
                  ])
 
 AC_OUTPUT

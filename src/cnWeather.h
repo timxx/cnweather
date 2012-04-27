@@ -101,4 +101,6 @@ guint		weather_window_get_current_city_id(cnWeather *window);
 
 void		weather_window_hide_result_tv(cnWeather *window);
 
+void		weather_window_set_theme(cnWeather *window, const gchar *theme);
+
 #endif /* __CN_WEATHER_H__ */

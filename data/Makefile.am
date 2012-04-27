@@ -1,4 +1,4 @@
-SUBDIRS = icons ui
+SUBDIRS = icons ui themes
 
 @INTLTOOL_DESKTOP_RULE@
 desktop_in_files = cnWeather.desktop.in

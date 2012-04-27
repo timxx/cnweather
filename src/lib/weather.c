@@ -23,6 +23,10 @@ static const gchar *_wind[] = {
 	"wind1", "wind2", "wind3"
 };
 
+static const gchar *_img[] = {
+	"img1", "img3", "img5"
+};
+
 static const gchar *_agent = "cnWeather/0.1";
 static const gchar *_city_list_url = "http://www.weather.com.cn/data/list3/city";
 static const gchar *_weather_data_url = "http://m.weather.com.cn/data/";
@@ -194,9 +198,17 @@ static void parse_data(gchar *data, size_t len, WeatherInfo *wi)
 
     for(i=0; i<3; ++i)
     {
+		gchar *img = NULL;
+
 		get_value(data, len, _temp[i],		&wi->weather[i].temperature);
 		get_value(data, len, _weather[i],	&wi->weather[i].weather);
 		get_value(data, len, _wind[i],		&wi->weather[i].wind);
+		get_value(data, len, _img[i],		&img);
+		if (img)
+		{
+			wi->weather[i].img = g_strtod(img, NULL);
+			g_free(img);
+		}
 	}
 }
 
@@ -261,6 +273,7 @@ WeatherInfo *weather_new_info()
 		wi->weather[i].temperature = 0;
 		wi->weather[i].weather = NULL;
 		wi->weather[i].wind = NULL;
+		wi->weather[i].img = 0;
 	}
 
 	wi->city_id = 0;

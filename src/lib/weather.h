@@ -14,9 +14,10 @@ typedef struct
 
     struct
     {
-        gchar*   temperature;
-        gchar*   weather;
-        gchar*   wind;
+        gchar*	temperature;
+        gchar*	weather;
+        gchar*	wind;
+		gint	img;
     }
     weather[3];
 

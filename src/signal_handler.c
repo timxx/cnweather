@@ -344,3 +344,17 @@ void on_tv_result_row_activated(GtkTreeView *tv,
        g_free(text);
     }
 }
+
+void on_pref_cb_themes_changed(GtkComboBox *cb, gpointer data)
+{
+	const gchar *theme;
+
+	if (main_window == NULL)
+		return ;
+
+	theme = gtk_combo_box_get_active_id(cb);
+	if (theme != NULL)
+	{
+		weather_window_set_theme(WEATHER_WINDOW(main_window), theme);
+	}
+}
