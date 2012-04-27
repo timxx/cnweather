@@ -19,7 +19,7 @@ typedef struct _cnWeatherPrivate cnWeatherPrivate;
 enum
 {
 	PAGE_WEATHER = 0,
-	PAGE_SEARCH,
+	PAGE_RESULT,
 	PAGE_PREFERENCES
 };
 
@@ -94,5 +94,11 @@ void		weather_window_set_duration(cnWeather *window, gint duration);
  * @name: parent city name
  */
 void		weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name);
+
+void		weather_window_update_pref_cb_by_town(cnWeather *window, gchar *name);
+
+guint		weather_window_get_current_city_id(cnWeather *window);
+
+void		weather_window_hide_result_tv(cnWeather *window);
 
 #endif /* __CN_WEATHER_H__ */

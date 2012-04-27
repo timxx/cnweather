@@ -41,6 +41,8 @@ void on_search_entry_activate(GtkEntry *entry, gpointer data)
 	text = gtk_entry_get_text(entry);
 	if (is_empty_text(text))
 		return ;
+
+	weather_window_hide_result_tv(WEATHER_WINDOW(main_window));
 	weather_window_search(WEATHER_WINDOW(main_window), text);
 }
 
@@ -284,6 +286,11 @@ void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
 	if (text != NULL)
 	{
 		guint id = g_strtod(text, NULL);
+		if (id == weather_window_get_current_city_id(WEATHER_WINDOW(main_window)))
+		{
+			g_print("same id\n");
+			return ;
+		}
 
 		weather_window_get_weather(WEATHER_WINDOW(main_window), id);
 	}
@@ -306,4 +313,34 @@ void on_pref_sp_duration_value_changed(GtkSpinButton *sb, gpointer data)
 void on_pref_cb_auto_start_toggled(GtkToggleButton *button, gpointer data)
 {
 	g_print("NOT IMPLEMENTED YET\n");
+}
+
+void on_tv_result_row_activated(GtkTreeView *tv,
+			GtkTreePath       *path,
+			GtkTreeViewColumn *column,
+			gpointer           data)
+{
+	GtkTreeModel *model;
+    GtkTreeIter   iter;
+ 
+    model = gtk_tree_view_get_model(tv);
+ 
+    if (gtk_tree_model_get_iter(model, &iter, path))
+    {
+       gchar *text;
+	   gchar **names;
+
+       gtk_tree_model_get(model, &iter, 0, &text, -1);
+
+	   names = g_strsplit(text, " ", -1);
+	   if (names)
+	   {
+		   weather_window_update_pref_cb_by_town(WEATHER_WINDOW(main_window), names[2]);
+		   weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
+
+		   g_strfreev(names);
+	   }
+ 
+       g_free(text);
+    }
 }

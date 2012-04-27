@@ -263,7 +263,7 @@ static void weather_window_init(cnWeather *window)
 
 	update_progress(window);
 	g_timeout_add(10, delay_load_settings, window);
-	g_timeout_add_seconds(5, delay_get_weather, window);
+	g_timeout_add_seconds(3, delay_get_weather, window);
 }
 
 static void weather_window_class_init(cnWeatherClass *klass)
@@ -474,7 +474,9 @@ static void search_city(cnWeather *window)
 			break;
 		}
 
-		sql = g_strdup_printf("SELECT * FROM town WHERE tname LIKE '%%%s%%'", priv->weather->city);
+		sql = g_strdup_printf("SELECT pname, cname, tname FROM province p, city c, town t WHERE "
+					"(tname LIKE '%%%s%%' OR cname LIKE '%%%s%%' OR pname LIKE '%%%s%%') "
+					"AND c.cid=t.cid AND p.pid=c.pid", priv->weather->city, priv->weather->city, priv->weather->city);
 
 		sql_query(priv->db_file, sql, query_db_city, window);
 	}
@@ -570,7 +572,7 @@ void weather_window_set_search_result(cnWeather *window, const gchar *text)
 		gtk_label_set_text(GTK_LABEL(label), text);
 	}
 
-	weather_window_set_page(window, PAGE_SEARCH);
+	weather_window_set_page(window, PAGE_RESULT);
 }
 
 static void update_tray_tooltips(cnWeather *window)
@@ -848,12 +850,15 @@ static void valid_window_pos(cnWeather *window, gint *x, gint *y)
 static void query_db_city(gpointer data, const gchar **result, gint row, gint col)
 {
 	cnWeather *window = (cnWeather *)data;
-//	cnWeatherPrivate *priv = window->priv;
+	cnWeatherPrivate *priv = window->priv;
+
+	GtkWidget *tree_view;
+	GtkTreeModel *model;
+	GtkTreeIter iter;
 
 	gint index = col;
 	gint i;
-
-	g_print("row: %d | col: %d\n", row, col);
+	gchar *buffer;
 
 	if (result == NULL || row == 0)
 	{
@@ -863,13 +868,68 @@ static void query_db_city(gpointer data, const gchar **result, gint row, gint co
 		return ;
 	}
 
+	if (row == 1)
+	{
+		if (priv->weather->city)
+		{
+			g_free(priv->weather->city);
+			priv->weather->city = NULL;
+		}
+
+		priv->weather->city = g_strdup(result[col+2]);
+		fill_pref_cb_by_town(window);
+
+		weather_window_set_page(window, PAGE_WEATHER);
+		return ;
+	}
+
+	tree_view = builder_get_widget(priv->ui_search, "tv_result");
+	if (tree_view == NULL)
+	{
+		g_warning("Missing widget: tv_result\n");
+		return ;
+	}
+
+	gtk_widget_set_visible(tree_view, TRUE);
+    model = gtk_tree_view_get_model(GTK_TREE_VIEW(tree_view));
+	if (model == NULL)
+	{
+		g_warning("Missing tree view model!\n");
+		return ;
+	}
+	
+	gtk_list_store_clear(GTK_LIST_STORE(model));
+
+	//pname cname tname
 	for(i=0; i<row; ++i)
 	{
-		gint j;
-		for(j=0; j<col; ++j)
-			g_print("%s ", result[index++]);
-		g_print("\n");
+		gchar *label;
+		const gchar *pname, *cname, *tname;
+
+		pname = result[index++];
+		cname = result[index++];
+		tname = result[index++];
+
+		label = g_strdup_printf("%s %s %s", pname, cname, tname);
+		if (label == NULL)
+			continue;
+
+		gtk_list_store_append(GTK_LIST_STORE(model), &iter);
+		gtk_list_store_set(GTK_LIST_STORE(model), &iter, 0, label, -1);
+
+		g_free(label);
 	}
+
+	gtk_widget_show_all(tree_view);
+	
+	buffer = g_strdup_printf(_("Found %d cities"), row);
+	if (buffer)
+	{
+		weather_window_set_search_result(window, buffer);
+		g_free(buffer);
+	}
+	else
+	  weather_window_set_search_result(window, _("Result"));
 }
 
 void weather_window_set_duration(cnWeather *window, gint duration)
@@ -1003,6 +1063,21 @@ void weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name)
 		case CB_CITY:		fill_city(window, name);	break;
 		case CB_TOWN:		fill_town(window, name);	break;
 	}
+}
+
+void weather_window_update_pref_cb_by_town(cnWeather *window, gchar *name)
+{
+	g_return_if_fail(window != NULL && name != NULL);
+
+	if (window->priv->weather->city)
+	{
+		g_free(window->priv->weather->city);
+		window->priv->weather->city = NULL;
+	}
+
+	window->priv->weather->city = g_strdup(name);
+
+	fill_pref_cb_by_town(window);
 }
 
 static void fill_pref_cb_by_town(cnWeather *window)
@@ -1140,3 +1215,22 @@ static gboolean get_weather_timer(gpointer data)
 
 	return TRUE;
 }
+
+guint weather_window_get_current_city_id(cnWeather *window)
+{
+	g_return_val_if_fail(window != NULL, 0);
+
+	return window->priv->city_id;
+}
+
+void weather_window_hide_result_tv(cnWeather *window)
+{
+	GtkWidget *widget;
+
+	g_return_if_fail(window != NULL);
+
+	widget = builder_get_widget(window->priv->ui_search, "tv_result");
+	if (widget)
+		gtk_widget_set_visible(widget, FALSE);
+}
+
