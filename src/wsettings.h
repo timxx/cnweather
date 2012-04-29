@@ -47,4 +47,6 @@ gboolean	w_settings_set_window_state(wSettings *sett, gboolean value);
 gchar*		w_settings_get_theme(wSettings *sett);
 gboolean	w_settings_set_theme(wSettings *sett, const gchar *theme);
 
+gint		w_settings_get_city_id(wSettings *sett);
+
 #endif

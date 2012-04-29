@@ -91,7 +91,17 @@ WeatherInfo *weather_new_info();
  */
 void weather_free_info(WeatherInfo *wi);
 
+/**
+ * get city list from www.weather.com.cn
+ * and insert into database
+ * the slower one
+ */
 gint weather_get_city_list(const gchar *db_file);
+
+/**
+ * get city database from Project Host
+ */
+gint weather_get_city_db(const gchar *db_file);
 
 #ifdef __cplusplus
 }

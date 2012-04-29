@@ -9,3 +9,4 @@ Terminal=false
 Type=Application
 Categories=GTK;
 StartupNotify=true
+X-GNOME-Autostart-enabled=true

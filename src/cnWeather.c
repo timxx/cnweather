@@ -72,8 +72,6 @@ static void save_settings(cnWeather *window);
  */
 static void set_preferences_page(cnWeather *window);
 
-static gboolean check_auto_start(cnWeather *window);
-
 /**
  * window-state event callback
  */
@@ -510,12 +508,50 @@ static gpointer get_cities_db_thread(gpointer data)
 {
 	cnWeather *window = (cnWeather*)data;
 	cnWeatherPrivate *priv = window->priv;
+	gint status = 0;
+
+	priv->getting_db = TRUE;
 
 	gdk_threads_enter();
 	update_progress(window);
 	gdk_threads_leave();
 
-	weather_get_city_list(priv->db_file);
+	if (weather_get_city_db(priv->db_file) != 0)
+		status = weather_get_city_list(priv->db_file);
+
+	if (status == 0)
+	{
+		guint city_id;
+
+		city_id = priv->city_id;
+		gdk_threads_enter();
+		weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
+		gdk_threads_leave();
+	
+		if (city_id == 0 || city_id != priv->city_id)
+		{
+			gdk_threads_enter();
+			weather_window_get_weather(window, city_id);
+			gdk_threads_leave();
+
+			g_usleep(3 * G_USEC_PER_SEC);
+
+			gdk_threads_enter();
+			fill_pref_cb_by_town(window);
+			gdk_threads_leave();
+		}
+	}
+	else
+	{
+		gdk_threads_enter();
+
+		weather_window_set_search_result(window, _("Unable to get "
+						"city database"));
+
+		gdk_threads_leave();
+	}
+
+	priv->getting_db = FALSE;
 
 	gdk_threads_enter();
 	update_progress(window);
@@ -739,14 +775,6 @@ static void set_preferences_page(cnWeather *window)
 		}
 	}
 
-	if (check_auto_start(window))
-	{
-		widget = builder_get_widget(priv->ui_pref, "cb_auto_start");
-		if (widget){
-			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
-		}
-	}
-
 	if ((duration = w_settings_get_duration(priv->settings)) > 0)
 	{
 		widget = builder_get_widget(priv->ui_pref, "sp_duration");
@@ -774,11 +802,6 @@ static void set_preferences_page(cnWeather *window)
 	}
 
 	set_theme_list(window, THEME_DIR, count);
-}
-
-static gboolean check_auto_start(cnWeather *window)
-{
-	return FALSE;
 }
 
 static gboolean on_window_state(GtkWidget *widget,

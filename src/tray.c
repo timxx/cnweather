@@ -137,7 +137,7 @@ static gboolean on_tray_activate(GtkStatusIcon *status_icon, gpointer       data
     }
     else
     {
-        gtk_widget_show_all(priv->main_window);
+        gtk_widget_show(priv->main_window);
         gtk_window_present(GTK_WINDOW(priv->main_window));
     }
 

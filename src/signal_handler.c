@@ -288,7 +288,6 @@ void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
 		guint id = g_strtod(text, NULL);
 		if (id == weather_window_get_current_city_id(WEATHER_WINDOW(main_window)))
 		{
-			g_print("same id\n");
 			return ;
 		}
 
@@ -305,14 +304,6 @@ void on_pref_sp_duration_value_changed(GtkSpinButton *sb, gpointer data)
 
 	duration = gtk_spin_button_get_value_as_int(sb);
 	weather_window_set_duration(WEATHER_WINDOW(main_window), duration);
-}
-
-/**
- * preferences->auto start
- */
-void on_pref_cb_auto_start_toggled(GtkToggleButton *button, gpointer data)
-{
-	g_print("NOT IMPLEMENTED YET\n");
 }
 
 void on_tv_result_row_activated(GtkTreeView *tv,

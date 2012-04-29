@@ -193,3 +193,9 @@ gboolean w_settings_set_theme(wSettings *sett, const gchar *theme)
 	return g_settings_set_string(G_SETTINGS(sett), "theme", theme);
 }
 
+gint w_settings_get_city_id(wSettings *sett)
+{
+	g_return_val_if_fail(sett != NULL, 0);
+
+	return g_settings_get_int(G_SETTINGS(sett), "city-id");
+}

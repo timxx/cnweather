@@ -9,6 +9,9 @@ struct _wSession
     gchar*   buffer;
     size_t  length;
     CURL*   curl;
+
+	void*	write_data;
+	curl_write_callback write_cb;
 };
 
 static const gchar *_temp[] = {
@@ -31,6 +34,7 @@ static const gchar *_agent = "cnWeather/0.1";
 static const gchar *_city_list_url = "http://www.weather.com.cn/data/list3/city";
 static const gchar *_weather_data_url = "http://m.weather.com.cn/data/";
 static const gchar *_default_city_url = "http://61.4.185.48:81/g";
+static const gchar *_city_db_url = "http://cloud.github.com/downloads/timxx/cnWeather/cities.db";
 
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
 static void parse_data(gchar *data, size_t len, WeatherInfo *wi);
@@ -49,6 +53,8 @@ static void insert_item_to_town(sqlite3 *db, gchar *id, gchar *name, gchar *city
 
 static gint exe_sql(sqlite3 *db, gchar *sql);
 
+static size_t write_file_func(void *ptr, size_t size, size_t nmemb, void *data);
+
 wSession* weather_open()
 {
     wSession *ws = NULL;
@@ -62,6 +68,9 @@ wSession* weather_open()
     if (ws->curl){
         curl_easy_setopt(ws->curl, CURLOPT_USERAGENT, _agent);
     }
+
+	ws->write_data = ws;
+	ws->write_cb = (curl_write_callback )&write_func;
 
     return ws;
 }
@@ -364,11 +373,11 @@ static gint get_url_data(wSession *ws, const gchar *url)
 
 		curl_easy_setopt(ws->curl, CURLOPT_FOLLOWLOCATION, 1);
 
-        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEFUNCTION, &write_func);
+        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEFUNCTION, ws->write_cb);
 		if (ret != CURLE_OK)
             break;
 
-        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEDATA, ws);
+        ret = curl_easy_setopt(ws->curl, CURLOPT_WRITEDATA, ws->write_data);
         if (ret != CURLE_OK)
             break;
 
@@ -612,4 +621,47 @@ static gint exe_sql(sqlite3 *db, gchar *sql)
 	}
 
 	return 0;
+}
+
+gint weather_get_city_db(const gchar *db_file)
+{
+	wSession *ws;
+	FILE *fp = NULL;
+	gint ret;
+
+	g_return_val_if_fail(db_file != NULL, -1);
+
+	ws = weather_open();
+	g_return_val_if_fail(ws != NULL, -1);
+
+	fp = fopen(db_file, "w");
+	if (fp == NULL)
+	{
+		weather_close(ws);
+		return -1;
+	}
+
+	ws->write_cb = (curl_write_callback )&write_file_func;
+	ws->write_data = fp;
+
+	ret = get_url_data(ws, _city_db_url);
+
+	fclose(fp);
+
+	weather_close(ws);
+
+	return ret;
+}
+
+static size_t write_file_func(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	size_t real_size = size * nmemb;
+	FILE *fp = (FILE *)data;
+
+    if (ptr == NULL || real_size == 0)
+        return 0;
+
+	fwrite(ptr, size, nmemb, fp);
+
+    return real_size;
 }
