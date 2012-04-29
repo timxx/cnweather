@@ -102,6 +102,8 @@ static void on_activate(GtkApplication *app)
 
 		if (!is_tray_mode)
 			gtk_widget_show_all(main_window);
+		else
+			weather_window_show_tray(WEATHER_WINDOW(main_window), TRUE);
     }
 }
 

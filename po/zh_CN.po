@@ -1,0 +1,240 @@
+# Chinese Language.
+# Copyright (C) 2012 Weitian Leung
+# This file is distributed under the same license as the cnWeather package.
+# Weitian Leung <weitianleung@gmail.com>, 2012.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-04-29 17:50+0800\n"
+"PO-Revision-Date: 2012-04-29 17:50+0800\\n"
+"Last-Translator: Weitian Leung <weitianleung@gmail.com>\n"
+"Language-Team: Weitian Leung <weitianleung@gmail.com>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/cnWeather.c:226
+msgid "cnWeather"
+msgstr ""
+
+#: src/cnWeather.c:346
+msgid "Getting city list data... Are you sure quit now?"
+msgstr "正在获取城市列表，确定要退出吗？"
+
+#: src/cnWeather.c:347
+msgid "Quit?"
+msgstr "退出？"
+
+#: src/cnWeather.c:453
+msgid ""
+"Couldn't get weather! \n"
+"Please check out your networks"
+msgstr ""
+"无法获取天气信息！\n"
+"请检查您的网络"
+
+#: src/cnWeather.c:487
+msgid ""
+"Database not exists, you may try to update local cache from preferences page"
+msgstr ""
+"数据库不存在，您可以在设置页面通过更新本地缓存来获取"
+
+#: src/cnWeather.c:548
+msgid "Unable to get city database"
+msgstr "无法获取城市数据库"
+
+#: src/cnWeather.c:875
+msgid "Getting weather in progress\n"
+msgstr "正在获取天气信息\n"
+
+#: src/cnWeather.c:880
+msgid "Getting city list in progress\n"
+msgstr "正在获取城市列表\n"
+
+#: src/cnWeather.c:894
+#, c-format
+msgid ""
+"<b>Background task(s): %d\n"
+"</b>%s%s"
+msgstr ""
+"<b>后台任务(%d)：%d\n"
+"</b>%s%s"
+
+#: src/cnWeather.c:954
+msgid ""
+"No match found\n"
+"You should try update local cache if you sure you don't have a mistype"
+msgstr ""
+"未找到匹配"
+"如果您没有打错的话可以尝试刷新数据库"
+
+#: src/cnWeather.c:1013
+#, c-format
+msgid "Found %d cities"
+msgstr "找到%d个匹配城市"
+
+#: src/cnWeather.c:1020
+msgid "Result"
+msgstr "结果"
+
+#: src/main.c:144
+msgid "Updating cache...\n"
+msgstr "正在更新缓存。。。\n"
+
+#: src/main.c:146
+msgid "Update cache failed\n"
+msgstr "更新缓存失败了\n"
+
+#: src/main.c:148
+msgid "Update cache complete\n"
+msgstr "已成功更新缓存\n"
+
+#: src/main.c:166
+#, c-format
+msgid "failed to malloc memory (%s, %d)\n"
+msgstr "无法分配内存 (%s, %d)\n"
+
+#: src/main.c:184
+#, c-format
+msgid "No city found: %s\n"
+msgstr "未找到相应的城市: %s\n"
+
+#: src/main.c:199 src/main.c:217
+#, c-format
+msgid "Unable to get weather information (%d)\n"
+msgstr "无法获取天气信息（%d）\n"
+
+#: src/main.c:210 src/main.c:294
+msgid "weather_open failed\n"
+msgstr "weather_open 失败\n"
+
+#: src/main.c:240
+#, c-format
+msgid "%s version %s\n"
+msgstr "%s 版本 %s\n"
+
+#: src/main.c:245
+#, c-format
+msgid ""
+"Usage: %s [ options ]\n"
+"\n"
+"Options:\n"
+"  -g, --no-gui\t\tshow weather information without gui\n"
+"  -c, --city\t\tspecify city name to show weather\n"
+"  -C, --city-id\t\tspecify city id to show weather\n"
+"  -t, --tray\t\tshow tray only when launch app\n"
+"  -u, --update-cache\tupdate local cache\n"
+"  -v, --version\t\tshow version\n"
+"  -h, --help\t\tshow help\n"
+msgstr ""
+"用法: %s [ 选项 ]\n"
+"\n"
+"选项:\n"
+"  -g, --no-gui\t\t在终端下显示天气信息\n"
+"  -c, --city\t\t显示指定城市的天气信息\n"
+"  -C, --city-id\t\t显示指定城市ID的天气信息\n"
+"  -t, --tray\t\t运行程序时仅显示系统托盘\n"
+"  -u, --update-cache\t更新本地缓存\n"
+"  -v, --version\t\t显示版本信息\n"
+"  -h, --help\t\t显示帮助\n"
+
+#: src/main.c:334
+#, c-format
+msgid ""
+"City: %s\n"
+"Weather: %s\n"
+"Temperature: %s\n"
+"Wind: %s\n"
+msgstr ""
+"城市: %s\n"
+"天气: %s\n"
+"温度: %s\n"
+"风级: %s\n"
+
+
+#: src/signal_handler.c:119
+msgid "Update will delete all the old cache! Really want to update?"
+msgstr "更新将会删除所有现有的本地缓存，确定要更新吗？"
+
+#: src/signal_handler.c:120
+msgid "Attention!"
+msgstr "注意！"
+
+#: data/ui/about.ui:7 data/ui/main.ui:7
+msgid "About"
+msgstr "关于"
+
+#: data/ui/about.ui:11
+msgid "Copyright @ 2012 Weitian Leung"
+msgstr ""
+
+#: data/ui/about.ui:12
+msgid ""
+"cnWeather is a tool for China weather information.\n"
+"Weather Information  comes from http://www.weather.com.cn"
+msgstr ""
+"cnWeather是一款天气小工具\n"
+"数据信息来自http://www.weather.com.cn"
+
+
+#: data/ui/about.ui:15
+msgid "Project Home Page"
+msgstr "项目主页"
+
+#: data/ui/about.ui:16
+msgid ""
+"    This program is free software: you can redistribute it and/or modify\n"
+"    it under the terms of the GNU General Public License as published by\n"
+"    the Free Software Foundation, either version 3 of the License, or\n"
+"    any later version.\n"
+"\n"
+"    This program is distributed in the hope that it will be useful,\n"
+"    but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"    GNU General Public License for more details.\n"
+"\n"
+"    You should have received a copy of the GNU General Public License\n"
+"    along with this program.  If not, see <http://www.gnu.org/licenses/>."
+msgstr ""
+
+#: main.ui:80
+msgid "Search city..."
+msgstr "搜索城市..."
+
+#: data/ui/main.ui:162
+msgid "Preferences"
+msgstr "设置"
+
+#: data/ui/preferences.ui:99
+msgid "Update Local Cache"
+msgstr "更新本地缓存"
+
+#: data/ui/preferences.ui:146
+msgid "Refresh duration (m): "
+msgstr "刷新频率(分): "
+
+#: data/ui/preferences.ui:179
+msgid "Show Tray"
+msgstr "显示系统托盘"
+
+#: data/ui/search.ui:79
+msgid "column"
+msgstr ""
+
+#: data/ui/weather.ui:19
+msgid "label"
+msgstr ""
+
+#: data/ui/weather.ui:86 data/ui/weather.ui:162
+#: data/ui/weather.ui:238
+msgid "temp"
+msgstr ""
+
+#: data/ui/weather.ui:99 data/ui/weather.ui:175
+#: data/ui/weather.ui:251
+msgid "weather"
+msgstr ""

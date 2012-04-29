@@ -823,6 +823,8 @@ static gboolean on_window_state(GtkWidget *widget,
 
 void weather_window_show_tray(cnWeather *window, gboolean state)
 {
+	GtkWidget *widget;
+
 	g_return_if_fail( window != NULL );
 
 	if (!state && window->priv->tray == NULL)
@@ -844,6 +846,11 @@ void weather_window_show_tray(cnWeather *window, gboolean state)
 	else
 	{
 		gtk_status_icon_set_visible(GTK_STATUS_ICON(window->priv->tray), FALSE);
+	}
+
+	widget = builder_get_widget(window->priv->ui_pref, "cb_show_tray");
+	if (widget){
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), state);
 	}
 }
 
