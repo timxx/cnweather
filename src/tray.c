@@ -48,7 +48,7 @@ GType weather_tray_get_type()
 
 WeatherTray* weather_tray_new()
 {
-    return WEATHER_TRAY(g_object_new(weather_tray_get_type(), "icon-name", "cnWeather", NULL));
+    return WEATHER_TRAY(g_object_new(weather_tray_get_type(), "icon-name", PACKAGE_NAME, NULL));
 }
 
 static void weather_tray_init(WeatherTray *tray)

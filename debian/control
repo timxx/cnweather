@@ -1,0 +1,23 @@
+Source: cnweather
+Section: utils
+Priority: extra
+Maintainer: Weitian Leung <weitianleung@gmail.com>
+Standards-Version: 3.9.2
+Homepage: https://github.com/timxx/cnweather
+Build-Depends:	debhelper (>= 8.0.0),
+				pkg-config,
+				autotools-dev,
+				libgtk-3-dev(>= 3.2),
+				intltool (>= 0.40.0),
+				libglib2.0-dev (>= 2.31.0),
+				libsqlite3-dev (>= 3.7.9),
+				libcurl4-openssl-dev (>= 7.22.0)
+
+Package: cnweather
+Architecture: any
+Depends: ${shlibs:Depends},
+		 ${misc:Depends}
+Description: China weather program
+ cnWeather is a simple weather of China cities application for
+ Linux OS. It both tiny for package size and data getting
+ from internet.

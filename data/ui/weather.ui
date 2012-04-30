@@ -16,7 +16,6 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="margin_right">153</property>
-            <property name="label" translatable="yes">label</property>
             <property name="single_line_mode">True</property>
             <attributes>
               <attribute name="weight" value="bold"/>
@@ -59,7 +58,7 @@
                     <property name="height_request">48</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="icon_name">cnWeather</property>
+                    <property name="icon_name">cnweather</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -83,7 +82,6 @@
                   <object class="GtkLabel" id="label_temperature1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">temp</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>
@@ -96,7 +94,6 @@
                   <object class="GtkLabel" id="label_weather1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">weather</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>
@@ -135,7 +132,7 @@
                     <property name="height_request">48</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="icon_name">cnWeather</property>
+                    <property name="icon_name">cnweather</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -159,7 +156,6 @@
                   <object class="GtkLabel" id="label_temperature2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">temp</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>
@@ -172,7 +168,6 @@
                   <object class="GtkLabel" id="label_weather2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">weather</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>
@@ -211,7 +206,7 @@
                     <property name="height_request">48</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="icon_name">cnWeather</property>
+                    <property name="icon_name">cnweather</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -235,7 +230,6 @@
                   <object class="GtkLabel" id="label_temperature3">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">temp</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>
@@ -248,7 +242,6 @@
                   <object class="GtkLabel" id="label_weather3">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">weather</property>
                     <property name="single_line_mode">True</property>
                   </object>
                   <packing>

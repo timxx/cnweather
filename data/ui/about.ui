@@ -11,7 +11,7 @@
     <property name="copyright" translatable="yes">Copyright @ 2012 Weitian Leung</property>
     <property name="comments" translatable="yes">cnWeather is a tool for China weather information.
 Weather Information  comes from http://www.weather.com.cn</property>
-    <property name="website">https://github.com/timxx/cnWeather</property>
+    <property name="website">https://github.com/timxx/cnweather</property>
     <property name="website_label" translatable="yes">Project Home Page</property>
     <property name="license" translatable="yes">    This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ Weather Information  comes from http://www.weather.com.cn</property>
     along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">Weitian Leung &lt;weitianleung@gmail.com&gt;</property>
     <property name="documenters"></property>
-    <property name="logo_icon_name">cnWeather</property>
+    <property name="logo_icon_name">cnweather</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="aboutdialog-vbox1">
         <property name="can_focus">False</property>

@@ -1,7 +1,7 @@
 SUBDIRS = icons ui themes
 
 @INTLTOOL_DESKTOP_RULE@
-desktop_in_files = cnWeather.desktop.in
+desktop_in_files = cnweather.desktop.in
 desktop_files = $(desktop_in_files:.desktop.in=.desktop)
 
 desktopdir = $(datadir)/applications

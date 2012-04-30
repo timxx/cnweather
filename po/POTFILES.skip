@@ -1,0 +1,5 @@
+# List of source files that should *not* be translated.
+# Please keep this file sorted alphabetically.
+
+data/com.timxx.cnweather.gschema.xml.in
+

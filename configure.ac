@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([cnWeather], [0.1.0], [weitianleung@gmail.com], [cnWeather], [https://github.com/timxx/cnWeather])
+AC_INIT([cnweather], [0.1.0], [weitianleung@gmail.com], [cnweather], [https://github.com/timxx/cnweather])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE()
@@ -16,7 +16,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
-GETTEXT_PACKAGE=cnWeather
+GETTEXT_PACKAGE=cnweather
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [GETTEXT package name])
 

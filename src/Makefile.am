@@ -1,8 +1,8 @@
 SUBDIRS = lib test
 
-bin_PROGRAMS = cnWeather
+bin_PROGRAMS = cnweather
 
-cnWeather_SOURCES =	\
+cnweather_SOURCES =	\
 	cnWeather.c		\
 	main.c			\
 	tray.c			\
@@ -18,6 +18,6 @@ AM_CFLAGS =	\
 		-DUI_DIR='"$(pkgdatadir)/ui"'	\
 		-DTHEME_DIR='"$(pkgdatadir)/themes"'
 
-cnWeather_LDADD =	\
+cnweather_LDADD =	\
 	@GTK_LIBS@	\
 	lib/libweather.la

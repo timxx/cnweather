@@ -1,11 +1,12 @@
 icons =	\
-	apps_16x16_cnWeather.png	\
-	apps_22x22_cnWeather.png	\
-	apps_24x24_cnWeather.png	\
-	apps_32x32_cnWeather.png	\
-	apps_48x48_cnWeather.png	\
-	apps_64x64_cnWeather.png
+	apps_16x16_cnweather.png	\
+	apps_22x22_cnweather.png	\
+	apps_24x24_cnweather.png	\
+	apps_32x32_cnweather.png	\
+	apps_48x48_cnweather.png	\
+	apps_64x64_cnweather.png
 
+#update_icon_cache =
 update_icon_cache = gtk-update-icon-cache -f -t $(datadir)/icons/hicolor
 
 install-icons:

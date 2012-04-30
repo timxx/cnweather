@@ -34,7 +34,7 @@ static const gchar *_agent = "cnWeather/0.1";
 static const gchar *_city_list_url = "http://www.weather.com.cn/data/list3/city";
 static const gchar *_weather_data_url = "http://m.weather.com.cn/data/";
 static const gchar *_default_city_url = "http://61.4.185.48:81/g";
-static const gchar *_city_db_url = "http://cloud.github.com/downloads/timxx/cnWeather/cities.db";
+static const gchar *_city_db_url = "http://cloud.github.com/downloads/timxx/cnweather/cities.db";
 
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
 static void parse_data(gchar *data, size_t len, WeatherInfo *wi);
