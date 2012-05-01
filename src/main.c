@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include <getopt.h>
 #include <stdlib.h> /* for exit status */
+#include <curl/curl.h>
 
 #include "intl.h"
 #include "config.h"
@@ -54,11 +55,16 @@ int main(int argc, char **argv)
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
     textdomain(GETTEXT_PACKAGE);
 
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	if (argc > 1)
 	{
 		status = do_xterm(argc, argv);
 		if (!is_tray_mode)
+		{
+			curl_global_cleanup();
 			return status;
+		}
 	}
 
 	if (!g_thread_supported())
@@ -70,6 +76,7 @@ int main(int argc, char **argv)
     if (app == NULL)
     {
         g_error("cnWeather: create app failed (%s, %d)\n", __FILE__, __LINE__);
+		curl_global_cleanup();
         return -1;
     }
 
@@ -78,6 +85,8 @@ int main(int argc, char **argv)
     status = g_application_run(G_APPLICATION(app), 0, NULL);
 
     g_object_unref(app);
+
+	curl_global_cleanup();
 
 	return status;
 }

@@ -381,7 +381,7 @@ static gint get_url_data(wSession *ws, const gchar *url)
         if (ret != CURLE_OK)
             break;
 
-		curl_easy_setopt(ws->curl, CURLOPT_CONNECTTIMEOUT, 30);
+		curl_easy_setopt(ws->curl, CURLOPT_CONNECTTIMEOUT, 10);
 
         ret = curl_easy_perform(ws->curl);
     }

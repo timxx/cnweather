@@ -435,7 +435,6 @@ static gpointer get_weather_thread(gpointer data)
 			ret = weather_get(ws, priv->city_id, priv->weather);
 
 		g_mutex_unlock(priv->mutex);
-
 		if (ret == 0)
 		{
 			g_mutex_lock(priv->mutex);
@@ -654,7 +653,7 @@ static void update_tray(cnWeather *window)
 				"<b>%s</b>\n"
 				"%s\n"
 				"%s\n"
-				"%s\n"
+				"%s"
 				,
 				priv->weather->city,
 				priv->weather->weather[0].weather,
@@ -1280,6 +1279,8 @@ static gboolean delay_load_settings(gpointer data)
 	cnWeather *window = (cnWeather *)data;
 
 	load_settings(window);
+
+	weather_window_update(window);
 
 	return FALSE;
 }
