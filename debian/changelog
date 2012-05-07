@@ -1,3 +1,9 @@
+cnweather (0.1.0-1~20120501) precise; urgency=low
+
+  * Daily build.
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 01 May 2012 15:46:39 +0800
+
 cnweather (0.1.0) precise; urgency=low
 
   * Initial Release.

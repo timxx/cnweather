@@ -6,8 +6,8 @@ icons =	\
 	apps_48x48_cnweather.png	\
 	apps_64x64_cnweather.png
 
-#update_icon_cache =
-update_icon_cache = gtk-update-icon-cache -f -t $(datadir)/icons/hicolor
+update_icon_cache =
+#update_icon_cache = gtk-update-icon-cache -f -t $(datadir)/icons/hicolor
 
 install-icons:
 	for icon in $(icons); do \

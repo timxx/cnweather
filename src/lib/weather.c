@@ -383,6 +383,9 @@ static gint get_url_data(wSession *ws, const gchar *url)
 
 		curl_easy_setopt(ws->curl, CURLOPT_CONNECTTIMEOUT, 10);
 
+		/* IMPORTANT */
+		curl_easy_setopt(ws->curl, CURLOPT_NOSIGNAL, 1L);
+
         ret = curl_easy_perform(ws->curl);
     }
     while(0);

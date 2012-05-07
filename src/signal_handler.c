@@ -237,8 +237,10 @@ static void do_about()
 		if (widget == NULL){
 			g_warning("Missing about dialog!\n");
 		}
-		else{
+		else
+		{
 			gtk_window_set_transient_for(GTK_WINDOW(widget), GTK_WINDOW(main_window));
+			gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(widget), VERSION);
 		}
 
 		g_object_unref(builder);
