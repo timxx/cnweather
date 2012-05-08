@@ -2,6 +2,7 @@
 #include <getopt.h>
 #include <stdlib.h> /* for exit status */
 #include <curl/curl.h>
+#include <signal.h>
 
 #include "intl.h"
 #include "config.h"
@@ -42,6 +43,8 @@ static void		print_weather_info(WeatherInfo *wi);
 
 static void		query_city_id(gpointer data, const gchar **result, gint row, gint col);
 
+static void		signal_handler(int signum);
+
 int main(int argc, char **argv)
 {
     GtkApplication *app;
@@ -81,6 +84,11 @@ int main(int argc, char **argv)
     }
 
     g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
+
+	signal(SIGTERM, signal_handler);
+	signal(SIGHUP, signal_handler);
+	signal(SIGINT, signal_handler);
+	signal(SIGABRT, signal_handler);
 
     status = g_application_run(G_APPLICATION(app), 0, NULL);
 
@@ -359,3 +367,10 @@ static void	query_city_id(gpointer data, const gchar **result, gint row, gint co
 	*((guint *)data) = g_strtod(result[col], NULL);
 }
 
+static void	signal_handler(int signum)
+{
+	if (main_window != NULL) /* quit so that it can save works */
+	{
+		weather_window_quit(WEATHER_WINDOW(main_window));
+	}
+}

@@ -1,3 +1,9 @@
+cnweather (0.1.1) precise; urgency=low
+
+  * Fixed a bug
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 08 May 2012 00:26:04 +0800 
+
 cnweather (0.1.0-1~20120501) precise; urgency=low
 
   * Daily build.
