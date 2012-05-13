@@ -9,8 +9,8 @@ export "C" {
 
 typedef struct
 {
-    guint		city_id;
-	gchar*		city;
+    gchar*	city_id;
+	gchar*	city;
 
     struct
     {
@@ -54,26 +54,15 @@ void
 weather_close(wSession *ws);
 
 /**
- * get weather info by city id
- * @ws
- * @city_id
- * @wi weather info in return
+ * get weather info
+ * @ws:	
+ * @wi: weather info in return, need to set city_id member
+ * or return only default city weather info
  * @return 0 if no problem, failed other vaules
  */
 gint
-weather_get(wSession *ws,
-            guint city_id,
-            WeatherInfo *wi);
+weather_get(wSession *ws, WeatherInfo *wi);
 
-/**
- * try to get weather by current ip adrress
- * @ws
- * @wi
- * @return
- */
-gint
-weather_get_default_city(wSession *ws,
-			WeatherInfo *wi);
 /**
  * set proxy for session
  * @ws

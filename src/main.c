@@ -36,8 +36,8 @@ static void show_help();
 
 static gint		update_cache();
 
-static gint		get_weather(guint city_id, WeatherInfo *wi);
-static guint	get_city_id(const gchar *city);
+static gint		get_weather(gchar *city_id, WeatherInfo *wi);
+static gchar*	get_city_id(const gchar *city);
 
 static void		print_weather_info(WeatherInfo *wi);
 
@@ -132,7 +132,7 @@ static int do_xterm(int argc, char **argv)
 	gchar *city = NULL;
 	gchar *city_id = NULL;
 
-	guint target_city_id = 0;
+	gchar *target_city_id = NULL;
 
 	WeatherInfo *wi = NULL;
 	wSettings *sett = NULL;
@@ -190,12 +190,12 @@ static int do_xterm(int argc, char **argv)
 	/* only city_id will check */
 	if (city_id)
 	{
-		target_city_id = g_strtod(city_id, NULL);
+		target_city_id = city_id;
 	}
 	
 	else if(city)
 	{
-		guint cid;
+		gchar *cid;
 		cid = get_city_id(city);
 		if (cid == 0){
 			g_print(_("No city found: %s\n"), city);
@@ -205,44 +205,20 @@ static int do_xterm(int argc, char **argv)
 	}
 	else if(no_gui)
 	{
-		if (sett)
-			target_city_id = w_settings_get_city_id(sett);
+//		if (sett)
+//			target_city_id = w_settings_get_city_id(sett);
 	}
 
-	if (target_city_id != 0)
-	{
-		status = get_weather(target_city_id, wi);
-		if (status != 0)
-			g_print(_("Unable to get weather information (%d)\n"), status);
-		else
-			print_weather_info(wi);
-	}
-	else if(city != NULL && city_id != NULL)
-	{
-		wSession *ws;
-
-		ws = weather_open();
-		if (ws == NULL)
-		{
-			g_print(_("weather_open failed\n"));
-			status = EXIT_FAILURE;
-		}
-		else
-		{
-			status = weather_get_default_city(ws, wi);
-			if (status != 0)
-				g_print(_("Unable to get weather information (%d)\n"), status);
-			else
-				print_weather_info(wi);
-
-			weather_close(ws);
-		}
-	}
+	status = get_weather(target_city_id, wi);
+	if (status != 0)
+		g_print(_("Unable to get weather information (%d)\n"), status);
+	else
+		print_weather_info(wi);
 
 	if (sett)
 	{
-		if ((status == 0) && (wi->city != NULL))
-			w_settings_set_weather(sett, wi);
+		//if ((status == 0) && (wi->city != NULL))
+		//	w_settings_set_weather(sett, wi);
 		g_object_unref(sett);
 	}
 
@@ -300,7 +276,7 @@ static gint update_cache()
 	return ret;
 }
 
-static gint	get_weather(guint city_id, WeatherInfo *wi)
+static gint	get_weather(gchar *city_id, WeatherInfo *wi)
 {
 	gint status;
 	wSession *ws;
@@ -312,18 +288,19 @@ static gint	get_weather(guint city_id, WeatherInfo *wi)
 		return EXIT_FAILURE;
 	}
 
-	status = weather_get(ws, city_id, wi);
+	wi->city_id = g_strdup(city_id);
+	status = weather_get(ws, wi);
 
 	weather_close(ws);
 
 	return status;
 }
 
-static guint get_city_id(const gchar *city)
+static gchar* get_city_id(const gchar *city)
 {
 	gchar *sql;
 	gchar *db_file;
-	guint id = 0;
+	gchar *id = NULL;
 
 	sql = g_strdup_printf("SELECT city_id FROM town WHERE tname='%s'", city);
 	g_return_val_if_fail( sql != NULL, 0);
@@ -364,7 +341,7 @@ static void	query_city_id(gpointer data, const gchar **result, gint row, gint co
 	if (result == NULL || row == 0)
 		return ;
 
-	*((guint *)data) = g_strtod(result[col], NULL);
+	*((gchar **)data) = g_strdup(result[col]);
 }
 
 static void	signal_handler(int signum)

@@ -2,6 +2,7 @@
 #define __SETTINGS__
 
 #include <gio/gio.h>
+
 #include "lib/weather.h"
 
 #define W_TYPE_SETTINGS				(w_settings_get_type())
@@ -29,8 +30,8 @@ wSettings*	w_settings_new();
 gboolean	w_settings_get_show_tray(wSettings *sett);
 gboolean	w_settings_set_show_tray(wSettings *sett, gboolean value);
 
-gboolean	w_settings_get_weather(wSettings *sett, WeatherInfo *wi);
-gboolean	w_settings_set_weather(wSettings *sett, WeatherInfo *wi);
+gboolean	w_settings_get_weather(wSettings *sett, GList **list);
+gboolean	w_settings_set_weather(wSettings *sett, GList *list);
 
 gboolean	w_settings_get_window_size(wSettings *sett, gint *w, gint *h);
 gboolean	w_settings_set_window_size(wSettings *sett, gint w, gint h);

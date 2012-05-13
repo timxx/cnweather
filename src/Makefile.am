@@ -9,7 +9,9 @@ cnweather_SOURCES =	\
 	builder.c		\
 	signal_handler.c	\
 	wsettings.c	\
-	common.c
+	common.c	\
+	weatherpage.c	\
+	weatherwidget.c
 
 AM_CFLAGS =	\
 		@GTK_CFLAGS@	\

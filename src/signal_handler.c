@@ -29,6 +29,15 @@ void on_button_about_clicked(GtkButton *button, gpointer data)
 }
 
 /**
+ * refresh button
+ */
+void on_button_refresh_clicked(GtkButton *button, gpointer data)
+{
+	if (main_window)
+		weather_window_refresh(WEATHER_WINDOW(main_window));
+}
+
+/**
  * User press Enter key on search entry
  */
 void on_search_entry_activate(GtkEntry *entry, gpointer data)
@@ -93,17 +102,9 @@ static gboolean is_empty_text(const gchar *text)
 }
 
 /**
- * back button on preferences page
+ * back button
  */
-void on_pref_button_back_clicked(GtkButton *button, gpointer data)
-{
-	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
-}
-
-/**
- * search result page
- */
-void on_search_button_back_clicked(GtkButton *button, gpointer data)
+void on_button_back_clicked(GtkButton *button, gpointer data)
 {
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 }
@@ -287,13 +288,7 @@ void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
 	text = gtk_combo_box_get_active_id(cb);
 	if (text != NULL)
 	{
-		guint id = g_strtod(text, NULL);
-		if (id == weather_window_get_current_city_id(WEATHER_WINDOW(main_window)))
-		{
-			return ;
-		}
-
-		weather_window_get_weather(WEATHER_WINDOW(main_window), id);
+		weather_window_get_weather(WEATHER_WINDOW(main_window), text);
 	}
 }
 
@@ -328,10 +323,14 @@ void on_tv_result_row_activated(GtkTreeView *tv,
 	   names = g_strsplit(text, " ", -1);
 	   if (names)
 	   {
-		   weather_window_update_pref_cb_by_town(WEATHER_WINDOW(main_window), names[2]);
+		   gchar *id;
 		   weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 
+		   id = weather_window_query_city_id(WEATHER_WINDOW(main_window), names[2]);
+		   weather_window_get_weather(WEATHER_WINDOW(main_window), id);
+
 		   g_strfreev(names);
+		   g_free(id);
 	   }
  
        g_free(text);
@@ -350,4 +349,9 @@ void on_pref_cb_themes_changed(GtkComboBox *cb, gpointer data)
 	{
 		weather_window_set_theme(WEATHER_WINDOW(main_window), theme);
 	}
+}
+
+void on_weather_button_add_clicked(GtkButton *button, gpointer data)
+{
+	weather_window_add_query_city(WEATHER_WINDOW(main_window));
 }

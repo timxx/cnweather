@@ -14,7 +14,8 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    if (weather_get(ws, 101070101, &wi) != 0)
+	wi.city_id = g_strdup("101070101");
+    if (weather_get(ws, &wi) != 0)
     {
         printf("failed to get weather\n");
     }

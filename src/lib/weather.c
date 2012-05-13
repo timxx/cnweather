@@ -39,7 +39,7 @@ static const gchar *_city_db_url = "http://cloud.github.com/downloads/timxx/cnwe
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
 static void parse_data(gchar *data, size_t len, WeatherInfo *wi);
 static gint get_value(const gchar *data, size_t len, const gchar *key, gchar **value);
-static guint get_default_city_id();
+static gchar* get_default_city_id();
 
 static int get_url_data(wSession *ws, const gchar *url);
 
@@ -94,7 +94,6 @@ void weather_close(wSession *ws)
 }
 
 int weather_get(wSession *ws,
-            guint city_id,
             WeatherInfo *wi)
 {
     gchar url[250];
@@ -110,26 +109,21 @@ int weather_get(wSession *ws,
 		ws->length = 0;
 	}
 
-    snprintf(url, 250, "%s%d.html", _weather_data_url, city_id);
+	if (wi->city_id == NULL)
+	{
+		wi->city_id = get_default_city_id();
+	}
+
+    snprintf(url, 250, "%s%s.html", _weather_data_url, wi->city_id);
 
 	ret = get_url_data(ws, url);
 
-    wi->city_id = city_id;
-    if (ret == CURLE_OK)
-        parse_data(ws->buffer, ws->length, wi);
+	if (ret == CURLE_OK)
+	{
+		parse_data(ws->buffer, ws->length, wi);
+	}
 
     return ret;
-}
-
-gint weather_get_default_city(wSession *ws, WeatherInfo *wi)
-{
-	guint id;
-
-	id = get_default_city_id();
-	if (id == 0)
-		return -1;
-
-	return weather_get(ws, id, wi);
 }
 
 gint weather_set_proxy(wSession *ws, ProxyInfo *pi)
@@ -198,7 +192,7 @@ static void parse_data(gchar *data, size_t len, WeatherInfo *wi)
 
 	for(i=0; i<3; ++i)
 	{
-		wi->weather[i].temperature = 0;
+		wi->weather[i].temperature = NULL;
 		wi->weather[i].weather = NULL;
 		wi->weather[i].wind = NULL;
 	}
@@ -279,13 +273,13 @@ WeatherInfo *weather_new_info()
 
 	for(i=0; i<3; i++)
 	{
-		wi->weather[i].temperature = 0;
+		wi->weather[i].temperature = NULL;
 		wi->weather[i].weather = NULL;
 		wi->weather[i].wind = NULL;
 		wi->weather[i].img = 0;
 	}
 
-	wi->city_id = 0;
+	wi->city_id = NULL;
 	wi->city = NULL;
 
 	return wi;
@@ -312,18 +306,21 @@ void weather_free_info(WeatherInfo *wi)
 		if (wi->city){
 			g_free(wi->city);
 		}
+		if (wi->city_id){
+			g_free(wi->city_id);
+		}
 	}
 }
 
-static guint get_default_city_id()
+static gchar* get_default_city_id()
 {
-	guint id = 0;
 	wSession *ws;
 	gchar *p, *t;
+	gchar *id = NULL;
 
 	ws = weather_open();
 	if (ws == NULL)
-		return 0;
+		return NULL;
 
 	do
 	{
@@ -349,7 +346,7 @@ static guint get_default_city_id()
 		if (p)
 			*p = 0;
 
-		id = g_strtod(t, NULL);
+		id = g_strdup(t);
 	}
 	while(0);
 

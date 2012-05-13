@@ -63,57 +63,168 @@ gboolean w_settings_set_show_tray(wSettings *sett, gboolean value)
 	return g_settings_set_boolean(G_SETTINGS(sett), "tray", value);
 }
 
-gboolean w_settings_get_weather(wSettings *sett, WeatherInfo *wi)
+gboolean w_settings_get_weather(wSettings *sett, GList **list)
 {
+	gchar **city_id;
+	gchar **city;
+	gchar **weather[3];
+	gchar **wind[3];
+	gchar **temp[3];
+	gchar **img[3];
+
 	gchar name[10];
 	int i;
 
-	g_return_val_if_fail(sett != NULL && wi != NULL, FALSE);
+	g_return_val_if_fail(sett != NULL && list != NULL, FALSE);
 
-	wi->city_id = g_settings_get_int(G_SETTINGS(sett), "city-id");
-	wi->city = g_settings_get_string(G_SETTINGS(sett), "city");
+	city_id = g_settings_get_strv(G_SETTINGS(sett), "city-id");
+	if (city_id == NULL)
+		return TRUE;
+
+	city = g_settings_get_strv(G_SETTINGS(sett), "city");
+	if (city == NULL)
+	{
+		g_strfreev(city_id);
+		return TRUE;
+	}
 
 	for(i=0; i<3; ++i)
 	{
 		g_snprintf(name, 10, "%s%d", _names[0], i + 1);
-		wi->weather[i].weather = g_settings_get_string(G_SETTINGS(sett), name);
+		weather[i] = g_settings_get_strv(G_SETTINGS(sett), name);
 
 		g_snprintf(name, 10, "%s%d", _names[1], i + 1);
-		wi->weather[i].wind = g_settings_get_string(G_SETTINGS(sett), name);
+		wind[i] = g_settings_get_strv(G_SETTINGS(sett), name);
 
 		g_snprintf(name, 10, "%s%d", _names[2], i + 1);
-		wi->weather[i].temperature = g_settings_get_string(G_SETTINGS(sett), name);
+		temp[i] = g_settings_get_strv(G_SETTINGS(sett), name);
 
 		g_snprintf(name, 10, "%s%d", _names[3], i + 1);
-		wi->weather[i].img = g_settings_get_int(G_SETTINGS(sett), name);
+		img[i] = g_settings_get_strv(G_SETTINGS(sett), name);
 	}
+
+	i = 0;
+
+	while(city_id[i])
+	{
+		WeatherInfo *wi;
+		gint j;
+		
+		wi = weather_new_info();
+		if (wi == NULL)
+			g_error("weather_new_info failed (%s, %d)\n", __FILE__, __LINE__);
+
+		wi->city_id = city_id[i];
+		wi->city = city[i];
+
+		for(j=0; j<3; ++j)
+		{
+			wi->weather[j].temperature = temp[j][i];
+			wi->weather[j].wind = wind[j][i];
+			wi->weather[j].weather = weather[j][i];
+
+			wi->weather[j].img = g_strtod(img[j][i], NULL); 
+		}
+
+		*list = g_list_append(*list, wi);
+
+		i++;
+	}
+
+	for(i=0; i<3; ++i)
+		g_strfreev(img[i]);
 
 	return TRUE;
 }
 
-gboolean w_settings_set_weather(wSettings *sett, WeatherInfo *wi)
+gboolean w_settings_set_weather(wSettings *sett, GList *list)
 {
 	gchar name[10];
-	int i;
+	gint i, count;
+	GList *p;
 
-	g_return_val_if_fail(sett != NULL && wi != NULL, FALSE);
+	gchar **city_id = NULL;
+	gchar **city = NULL;
+	gchar **temp[3] = {NULL};
+	gchar **wind[3] = {NULL};
+	gchar **weather[3] = {NULL};
+	gchar **img[3] = {NULL};
 
-	g_settings_set_string(G_SETTINGS(sett), "city", wi->city);
-	g_settings_set_int(G_SETTINGS(sett), "city-id", wi->city_id);
+	g_return_val_if_fail(sett != NULL && list != NULL, FALSE);
+
+	count = g_list_length(list);
+	if (count > 0)
+	{
+		count = (count + 1) * sizeof(gchar *);
+	
+		city_id = (gchar **)g_malloc0(count);
+		if (city_id == NULL)
+			return FALSE;
+
+		city	= (gchar **)g_malloc0(count);
+
+		for(i=0; i<3; ++i)
+		{
+			temp[i]		= (gchar **)g_malloc0(count);
+			wind[i]		= (gchar **)g_malloc0(count);
+			weather[i]	= (gchar **)g_malloc0(count);
+			img[i]		= (gchar **)g_malloc0(count);
+		}
+	}
+
+	p = list;
+	i = 0;
+	while (p && city_id != NULL)
+	{
+		WeatherInfo *wi = (WeatherInfo *)p->data;
+		gint j;
+
+		city_id[i] = wi->city_id;
+		city[i] = wi->city;
+
+		for(j=0; j<3; ++j)
+		{
+			temp[j][i] = wi->weather[j].temperature;
+			wind[j][i] = wi->weather[j].wind;
+			weather[j][i] = wi->weather[j].weather;
+
+			img[j][i] = g_strdup_printf("%d", wi->weather[j].img);
+		}
+
+		p = p->next;
+		i++;
+	}
+
+	g_settings_set_strv(G_SETTINGS(sett), "city", (const gchar * const*)city);
+	g_settings_set_strv(G_SETTINGS(sett), "city-id", (const gchar * const*)city_id);
 
 	for(i=0; i<3; ++i)
 	{
 		g_snprintf(name, 10, "%s%d", _names[0], i + 1);
-		g_settings_set_string(G_SETTINGS(sett), name, wi->weather[i].weather);
+		g_settings_set_strv(G_SETTINGS(sett), name, (const gchar * const*)weather[i]);
 
 		g_snprintf(name, 10, "%s%d", _names[1], i + 1);
-		g_settings_set_string(G_SETTINGS(sett), name, wi->weather[i].wind);
+		g_settings_set_strv(G_SETTINGS(sett), name, (const gchar * const*)wind[i]);
 
 		g_snprintf(name, 10, "%s%d", _names[2], i + 1);
-		g_settings_set_string(G_SETTINGS(sett), name, wi->weather[i].temperature);
+		g_settings_set_strv(G_SETTINGS(sett), name, (const gchar * const*)temp[i]);
 
 		g_snprintf(name, 10, "%s%d", _names[3], i + 1);
-		g_settings_set_int(G_SETTINGS(sett), name, wi->weather[i].img);
+		g_settings_set_strv(G_SETTINGS(sett), name, (const gchar * const*)img[i]);
+	}
+
+	if (city_id != NULL)
+	{
+		g_free(city_id);
+		g_free(city);
+
+		for(i=0; i<3; ++i)
+		{
+			g_free(weather[i]);
+			g_free(wind[i]);
+			g_free(temp[i]);
+			g_strfreev(img[i]);
+		}
 	}
 
 	return TRUE;

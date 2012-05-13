@@ -19,16 +19,16 @@
 			<default>''</default>
 			<_summary>Icon theme for weather</_summary>
 		</key>
-		<key name="city-id" type="i">
-			<default>0</default>
-			<_summary>City id</_summary>
-			<_description>Last city id for weather information</_description>
+		<key name="city-id" type="as">
+			<default>[]</default>
+			<_summary>list of city id</_summary>
+			<_description>city ids for weather information</_description>
 		</key>
-		<key name="city" type="s">
-			<default>''</default>
+		<key name="city" type="as">
+			<default>[]</default>
 		</key>
 		<key name="duration" type="i">
-			<default>5</default>
+			<default>30</default>
 			<_summary>Refresh duration</_summary>
 			<_description>Duration to refresh weather</_description>
 		</key>
@@ -37,42 +37,42 @@
 			<_summary>System Tray</_summary>
 			<_description>Show system tray or not</_description>
 		</key>
-		<key name="weather1" type="s">
-			<default>''</default>
+		<key name="weather1" type="as">
+			<default>[]</default>
 		</key>
-		<key name="wind1" type="s">
-			<default>''</default>
+		<key name="wind1" type="as">
+			<default>[]</default>
 		</key>
-		<key name="temp1" type="s">
-			<default>''</default>
+		<key name="temp1" type="as">
+			<default>[]</default>
 		</key>
-		<key name="img1" type="i">
-			<default>0</default>
+		<key name="img1" type="as">
+			<default>[]</default>
 		</key>
-		<key name="weather2" type="s">
-			<default>''</default>
+		<key name="weather2" type="as">
+			<default>[]</default>
 		</key>
-		<key name="wind2" type="s">
-			<default>''</default>
+		<key name="wind2" type="as">
+			<default>[]</default>
 		</key>
-		<key name="temp2" type="s">
-			<default>''</default>
+		<key name="temp2" type="as">
+			<default>[]</default>
 		</key>
-		<key name="img2" type="i">
-			<default>0</default>
+		<key name="img2" type="as">
+			<default>[]</default>
 		</key>
 
-		<key name="weather3" type="s">
-			<default>''</default>
+		<key name="weather3" type="as">
+			<default>[]</default>
 		</key>
-		<key name="wind3" type="s">
-			<default>''</default>
+		<key name="wind3" type="as">
+			<default>[]</default>
 		</key>
-		<key name="temp3" type="s">
-			<default>''</default>
+		<key name="temp3" type="as">
+			<default>[]</default>
 		</key>
-		<key name="img3" type="i">
-			<default>0</default>
+		<key name="img3" type="as">
+			<default>[]</default>
 		</key>
 	</schema>
 </schemalist>

@@ -6,11 +6,11 @@
 #include "wsettings.h"
 
 #define TYPE_WEATHER_WINDOW             (weather_window_get_type())
-#define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), TYPE_WEATHER_WINDOW, cnWeather))
-#define WEATHER_WINDOW_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
-#define IS_WEATHER_WINDOW(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_IMAGE_WINDOW))
-#define IS_WEATHER_WINDOW_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass), 	TYPE_WEATHER_WINDOW))
-#define WEATHER_WINDOW_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj), 	TYPE_WEATHER_WINDOW, cnWeatherClass))
+#define WEATHER_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj),	TYPE_WEATHER_WINDOW, cnWeather))
+#define WEATHER_WINDOW_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass),	TYPE_WEATHER_WINDOW, cnWeatherClass))
+#define IS_WEATHER_WINDOW(obj)			(G_TYPE_CHECK_INSTANCE_TYPE((obj),	TYPE_WEATHER_WINDOW))
+#define IS_WEATHER_WINDOW_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE((klass),	TYPE_WEATHER_WINDOW))
+#define WEATHER_WINDOW_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS((obj),	TYPE_WEATHER_WINDOW, cnWeatherClass))
 
 typedef struct _cnWeather       cnWeather;
 typedef struct _cnWeatherClass  cnWeatherClass;
@@ -20,7 +20,8 @@ enum
 {
 	PAGE_WEATHER = 0,
 	PAGE_RESULT,
-	PAGE_PREFERENCES
+	PAGE_PREFERENCES,
+	PAGE_WEATHER_QUERY
 };
 
 enum
@@ -47,7 +48,7 @@ GType       weather_window_get_type();
 /**
  * update weather by city_id
  */
-void		weather_window_get_weather(cnWeather *window, guint city_id);
+void		weather_window_get_weather(cnWeather *window, const gchar *city_id);
 
 /**
  * set current page on main window
@@ -58,11 +59,6 @@ void		weather_window_set_page(cnWeather *window, int page);
  * search city from local database
  */
 void		weather_window_search(cnWeather *window, const gchar *city);
-
-/**
- * update weather information
- */
-void		weather_window_update(cnWeather *window);
 
 /**
  * only for text information
@@ -97,10 +93,21 @@ void		weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name);
 
 void		weather_window_update_pref_cb_by_town(cnWeather *window, gchar *name);
 
-guint		weather_window_get_current_city_id(cnWeather *window);
-
 void		weather_window_hide_result_tv(cnWeather *window);
 
 void		weather_window_set_theme(cnWeather *window, const gchar *theme);
+
+/**
+ * refresh weather information
+ */
+void		weather_window_refresh(cnWeather *window);
+
+gchar*		weather_window_query_city_id(cnWeather *window, const gchar *city);
+
+/**
+ * append query city to cityid_list
+ *
+ */
+void		weather_window_add_query_city(cnWeather *window);
 
 #endif /* __CN_WEATHER_H__ */
