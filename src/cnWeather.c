@@ -256,7 +256,7 @@ static void weather_window_init(cnWeather *window)
 	gtk_notebook_append_page(GTK_NOTEBOOK(note_book), page3, NULL);
 	gtk_notebook_append_page(GTK_NOTEBOOK(note_book), page4, NULL);
 
-	gtk_notebook_set_current_page(GTK_NOTEBOOK(note_book), 3);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(note_book), 0);
 
 	gtk_container_add(GTK_CONTAINER(window), box_main);
 
@@ -1732,20 +1732,28 @@ void weather_window_add_query_city(cnWeather *window)
 		wi->weather[i].wind = gtk_widget_get_tooltip_text(widget);
 
 		// 
-		g_object_get(widget, "file", &image);
-		if (file)
+		g_object_get(widget, "file", &image, NULL);
+		if (image)
 		{
 			gchar *name;
 			name = g_path_get_basename(image);
 			if (name)
 			{
 				gchar *p = name;
+				gchar *digit;
 				if (*p == 'n') //nXXX.png
 					p++;
 
+				digit = p;
+				while (*p != '.')
+				   p++;
+				*p = 0;
+
+				wi->weather[i].img = g_strtod(digit, NULL);
+
 				g_free(name);
 			}
-			g_free(file);
+			g_free(image);
 		}
 	}
 
