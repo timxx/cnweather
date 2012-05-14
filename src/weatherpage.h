@@ -33,4 +33,7 @@ GType       weather_page_get_type();
 void		weather_page_set_weather_info(WeatherPage *page, WeatherInfo *wi);
 void		weather_page_set_image(WeatherPage *page, gint widget, const gchar *uri);
 
+void		weather_page_set_index(WeatherPage *page, gint index);
+gint		weather_page_get_index(WeatherPage *page);
+
 #endif /* __WEATHER_PAGE_H__ */

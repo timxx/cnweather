@@ -11,7 +11,8 @@ cnweather_SOURCES =	\
 	wsettings.c	\
 	common.c	\
 	weatherpage.c	\
-	weatherwidget.c
+	weatherwidget.c	\
+	weathertab.c
 
 AM_CFLAGS =	\
 		@GTK_CFLAGS@	\

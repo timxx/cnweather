@@ -110,4 +110,6 @@ gchar*		weather_window_query_city_id(cnWeather *window, const gchar *city);
  */
 void		weather_window_add_query_city(cnWeather *window);
 
+gboolean	weather_window_test_city(cnWeather *window, const gchar *city);
+
 #endif /* __CN_WEATHER_H__ */

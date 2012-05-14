@@ -8,6 +8,7 @@
 struct _WeatherPagePrivate
 {
 	GtkWidget*	widget[TOTAL_WIDGETS];	/* weather widget */
+	gint		index;
 };
 
 static void weather_page_init(WeatherPage *page);
@@ -58,6 +59,8 @@ static void weather_page_init(WeatherPage *page)
 	priv = WEATHER_PAGE_GET_PRIVATE(page);
 	page->priv = priv;
 
+	priv->index = -1;
+
 	for(i=0; i<TOTAL_WIDGETS; ++i)
 	{
 		priv->widget[i] = weather_widget_new();
@@ -94,4 +97,18 @@ void weather_page_set_image(WeatherPage *page, gint widget, const gchar *uri)
 	g_return_if_fail(page != NULL && widget >=0 && widget < TOTAL_WIDGETS);
 
 	weather_widget_set_image(WEATHER_WIDGET(page->priv->widget[widget]), uri);
+}
+
+void weather_page_set_index(WeatherPage *page, gint index)
+{
+	g_return_if_fail(page != NULL);
+
+	page->priv->index = index;
+}
+
+gint weather_page_get_index(WeatherPage *page)
+{
+	g_return_val_if_fail(page != NULL, -1);
+
+	return page->priv->index;
 }

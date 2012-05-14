@@ -6,6 +6,7 @@
 #include "tray.h"
 #include "common.h"
 #include "weatherpage.h"
+#include "weathertab.h"
 
 #define WEATHER_WINDOW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), weather_window_get_type(), cnWeatherPrivate))
 
@@ -47,6 +48,8 @@ typedef struct _cnWeatherPrivate
 
 	gchar*			cur_theme;	/* current theme directory */
 
+	gboolean		exiting;
+
 }cnWeatherPrivate;
 
 static void weather_window_init(cnWeather *window);
@@ -59,6 +62,12 @@ static void weather_window_finalize(GObject *obj);
 static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data);
 
 static void		search_city(cnWeather *window, const gchar *city);
+
+/**
+ * search city from existing pages
+ * return: index of found page or -1 if no match found
+ */
+static gint		search_from_pages(cnWeather *window, const gchar *city);
 
 /**
  * get weather information by priv->city_id
@@ -151,6 +160,19 @@ static void update_page(cnWeather *window, gint page, WeatherInfo *wi);
 static void	query_city_id(gpointer data, const gchar **result, gint row, gint col);
 
 static void set_weather_query_page(cnWeather *window, WeatherInfo *wi);
+
+static void on_nb_weather_page_removed(GtkNotebook *notebook,
+			GtkWidget   *child,
+			guint        page_num,
+			gpointer     user_data);
+
+static void on_nb_weather_page_reordered(GtkNotebook *notebook,
+			GtkWidget   *child,
+			guint        page_num,
+			gpointer     user_data);
+
+
+static void update_pages_index(cnWeather *window);
 
 GType weather_window_get_type()
 {
@@ -263,6 +285,13 @@ static void weather_window_init(cnWeather *window)
     g_signal_connect(window, "delete-event", G_CALLBACK(on_delete), NULL);
 	g_signal_connect(window, "window-state-event", G_CALLBACK(on_window_state), NULL);
 
+	g_signal_connect(priv->nb_weather, "page-removed",
+				G_CALLBACK(on_nb_weather_page_removed),
+				window);
+	g_signal_connect(priv->nb_weather, "page-reordered",
+				G_CALLBACK(on_nb_weather_page_reordered),
+				window);
+
 	priv->db_file = g_strdup_printf("%s/%s/data/cities.db", g_get_user_config_dir(), PACKAGE_NAME);
 	if (priv->db_file == NULL)
 		g_warning("failed to alloc memory (%s, %d)\n", __FILE__, __LINE__);
@@ -358,6 +387,8 @@ static gboolean on_delete(GtkWidget *widget, GdkEvent *event, gpointer data)
 			return TRUE;
 		}
 	}
+
+	priv->exiting = TRUE;
 
 	save_settings(window);
 
@@ -468,6 +499,10 @@ static void search_city(cnWeather *window, const gchar *city)
 	gchar *sql = NULL;
 
 	update_progress(window);
+
+	if (!weather_window_test_city(window, city))
+		return ;
+
 	do
 	{
 		if (priv->db_file == NULL ||
@@ -493,6 +528,33 @@ static void search_city(cnWeather *window, const gchar *city)
 	}
 
 	update_progress(window);
+}
+
+static gint	search_from_pages(cnWeather *window, const gchar *city)
+{
+	cnWeatherPrivate *priv = window->priv;
+	gint i;
+	gint count;
+
+	count = gtk_notebook_get_n_pages(GTK_NOTEBOOK(priv->nb_weather));
+	if (count == 0)
+		return -1;
+
+	for(i=0; i<count; ++i)
+	{
+		GtkWidget *page;
+		GtkWidget *tab;
+		const gchar *title;
+
+		page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), i);
+		tab  = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), page);
+
+		title = weather_tab_get_title(WEATHER_TAB(tab));
+		if (g_strcmp0(city, title) == 0)
+			return i;
+	}
+
+	return -1;
 }
 
 static gpointer get_cities_db_thread(gpointer data)
@@ -897,13 +959,22 @@ static void query_db_city(gpointer data, const gchar **result, gint row, gint co
 
 	if (row == 1)
 	{
-		gchar *id;
+		gint index;
 
 		weather_window_set_page(window, PAGE_WEATHER);
-		id = weather_window_query_city_id(window, result[col+2]);
-		weather_window_get_weather(window, id);
+		index = search_from_pages(window, result[col+2]);
 
-		g_free(id);
+		if (index >= 0)
+		{
+			gtk_notebook_set_current_page(GTK_NOTEBOOK(priv->nb_weather), index);
+		}
+		else
+		{
+			gchar *id;
+			id = weather_window_query_city_id(window, result[col+2]);
+			weather_window_get_weather(window, id);
+			g_free(id);
+		}
 
 		return ;
 	}
@@ -1410,13 +1481,18 @@ static void append_weather_page(cnWeather *window, WeatherInfo *wi)
 {
 	cnWeatherPrivate *priv;
 	GtkWidget *page;
+	GtkWidget *tab;
+	gint index;
 
 	priv = window->priv;
 
 	page = weather_page_new();
+	tab = weather_tab_new(priv->nb_weather, page);
 
-	gtk_notebook_append_page(GTK_NOTEBOOK(priv->nb_weather), page, NULL);
-	gtk_notebook_set_tab_label_text(GTK_NOTEBOOK(priv->nb_weather), page, wi->city);
+	index = gtk_notebook_append_page(GTK_NOTEBOOK(priv->nb_weather), page, tab);
+	weather_page_set_index(WEATHER_PAGE(page), index);
+	weather_tab_set_title(WEATHER_TAB(tab), wi->city);
+	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(priv->nb_weather), page, TRUE);
 
 	priv->cityid_list = g_list_append(priv->cityid_list, g_strdup(wi->city_id));
 
@@ -1428,6 +1504,7 @@ static void init_private_members(cnWeatherPrivate *priv)
 	priv->cityid_list = NULL;
 	priv->tray = NULL;
 	priv->quit_from_tray = FALSE;
+	priv->exiting = FALSE;
 
 	priv->settings = w_settings_new();
 
@@ -1535,6 +1612,8 @@ static void update_page(cnWeather *window, gint page, WeatherInfo *wi)
 {
 	GtkWidget *widget;
 	gint i;
+
+	g_return_if_fail(window != NULL && wi != NULL);
 
 	widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(window->priv->nb_weather), page);
 	if (widget)
@@ -1770,4 +1849,94 @@ void weather_window_add_query_city(cnWeather *window)
 
 	// update so it can save the list
 	get_weather_timer(window);
+}
+
+static void on_nb_weather_page_removed(GtkNotebook *notebook,
+			GtkWidget   *child,
+			guint        page_num,
+			gpointer     user_data)
+{
+	cnWeather *window = (cnWeather *)user_data;
+	cnWeatherPrivate *priv = window->priv;
+
+	gpointer data;
+
+	if (priv->exiting)
+		return ;
+
+	data = g_list_nth_data(priv->cityid_list, page_num);
+	if (data != NULL)
+	{
+		priv->cityid_list = g_list_remove(priv->cityid_list, data);
+		g_free(data);
+	}
+
+	gtk_widget_destroy(child);
+
+	update_pages_index(window);
+
+	// update weather
+	get_weather_timer(window);
+}
+
+static void on_nb_weather_page_reordered(GtkNotebook *notebook,
+			GtkWidget   *child,
+			guint        page_num,
+			gpointer     user_data)
+{
+	cnWeather *window = (cnWeather *)user_data;
+	cnWeatherPrivate *priv = window->priv;
+	gint old_page_num;
+	GList *list1, *list2;
+	gpointer data;
+
+	old_page_num = weather_page_get_index(WEATHER_PAGE(child));
+//	g_print("reordered from %d to %d\n", old_page_num, page_num);
+
+	// switch cityid_list
+	list1 = g_list_nth(priv->cityid_list, old_page_num);
+	list2 = g_list_nth(priv->cityid_list, page_num);
+
+	data = list1->data;
+	list1->data = list2->data;
+	list2->data = data;
+
+	update_pages_index(window);
+	get_weather_timer(window);
+}
+
+static void update_pages_index(cnWeather *window)
+{
+	cnWeatherPrivate *priv = window->priv;
+	gint count;
+	gint i;
+
+	count = gtk_notebook_get_n_pages(GTK_NOTEBOOK(priv->nb_weather));
+	if (count == 0)
+		return ;
+
+	for(i=0; i<count; ++i)
+	{
+		GtkWidget *page;
+
+		page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), i);
+		weather_page_set_index(WEATHER_PAGE(page), i);
+	}
+}
+
+gboolean weather_window_test_city(cnWeather *window, const gchar *city)
+{
+	cnWeatherPrivate *priv = window->priv;
+	gint index;
+
+	index = search_from_pages(window, city);
+	if (index >= 0)
+	{
+		weather_window_set_page(window, PAGE_WEATHER);
+
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(priv->nb_weather), index);
+		return FALSE;
+	}
+
+	return TRUE;
 }

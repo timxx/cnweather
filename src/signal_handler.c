@@ -323,14 +323,20 @@ void on_tv_result_row_activated(GtkTreeView *tv,
 	   names = g_strsplit(text, " ", -1);
 	   if (names)
 	   {
-		   gchar *id;
 		   weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_WEATHER);
 
-		   id = weather_window_query_city_id(WEATHER_WINDOW(main_window), names[2]);
-		   weather_window_get_weather(WEATHER_WINDOW(main_window), id);
+		   if (weather_window_test_city(WEATHER_WINDOW(main_window), names[2]))
+		   {
+			   gchar *id;
+			   id = weather_window_query_city_id(WEATHER_WINDOW(main_window), names[2]);
+			   weather_window_get_weather(WEATHER_WINDOW(main_window), id);
+
+			   g_free(id);
+		   }
+
+		   	weather_window_hide_result_tv(WEATHER_WINDOW(main_window));
 
 		   g_strfreev(names);
-		   g_free(id);
 	   }
  
        g_free(text);
