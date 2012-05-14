@@ -89,9 +89,9 @@ void		weather_window_set_duration(cnWeather *window, gint duration);
  * @cb: which combobox
  * @name: parent city name
  */
-void		weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name);
+void		weather_window_update_pref_cb(cnWeather *window, gint cb, const gchar *name);
 
-void		weather_window_update_pref_cb_by_town(cnWeather *window, gchar *name);
+void		weather_window_update_pref_cb_by_town(cnWeather *window, const gchar *name);
 
 void		weather_window_hide_result_tv(cnWeather *window);
 
@@ -110,6 +110,21 @@ gchar*		weather_window_query_city_id(cnWeather *window, const gchar *city);
  */
 void		weather_window_add_query_city(cnWeather *window);
 
+/**
+ * test if city exits in pages
+ * if does, then switch to that page
+ */
 gboolean	weather_window_test_city(cnWeather *window, const gchar *city);
+
+/**
+ * return: title of current tab
+ */
+const gchar* weather_window_get_current_tab_title(cnWeather *window);
+
+
+/**
+ * change current page's city to city of cityid
+ */
+void	weather_window_change_city(cnWeather *window, const gchar *city, const gchar *cityid);
 
 #endif /* __CN_WEATHER_H__ */

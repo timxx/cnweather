@@ -17,6 +17,12 @@ static void do_about();
  */
 void on_button_preferences_clicked(GtkButton *button, gpointer data)
 {
+	const gchar *name;
+	name = weather_window_get_current_tab_title(WEATHER_WINDOW(main_window));
+	if (name)
+	{
+		weather_window_update_pref_cb_by_town(WEATHER_WINDOW(main_window), name);
+	}
 	weather_window_set_page(WEATHER_WINDOW(main_window), PAGE_PREFERENCES); 
 }
 
@@ -263,7 +269,10 @@ void on_pref_cb_province_changed(GtkComboBox *cb, gpointer data)
 
 	province = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
 	if (province != NULL)
+	{
 		weather_window_update_pref_cb(WEATHER_WINDOW(main_window), CB_CITY, province);
+		g_free(province);
+	}
 }
 
 void on_pref_cb_city_changed(GtkComboBox *cb, gpointer data)
@@ -275,20 +284,26 @@ void on_pref_cb_city_changed(GtkComboBox *cb, gpointer data)
 
 	city = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
 	if (city != NULL)
+	{
 		weather_window_update_pref_cb(WEATHER_WINDOW(main_window), CB_TOWN, city);
+		g_free(city);
+	}
 }
 
 void on_pref_cb_town_changed(GtkComboBox *cb, gpointer data)
 {
-	const gchar *text;
+	gchar *name;
+	const gchar *id;
 
 	if (main_window == NULL)
 		return ;
 
-	text = gtk_combo_box_get_active_id(cb);
-	if (text != NULL)
+	name = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(cb));
+	id = gtk_combo_box_get_active_id(cb);
+	if (id != NULL)
 	{
-		weather_window_get_weather(WEATHER_WINDOW(main_window), text);
+		weather_window_change_city(WEATHER_WINDOW(main_window), name, id);
+		g_free(name);
 	}
 }
 

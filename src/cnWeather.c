@@ -13,7 +13,7 @@
 #define WIN_DEFAULT_WIDTH	500
 #define WIN_DEFAULT_HEIGHT	300
 
-typedef struct _cnWeatherPrivate 
+struct _cnWeatherPrivate 
 {
 	GList*			cityid_list;	/* list of city id */
 	gchar*			city_id;		/* city id to query */
@@ -50,7 +50,8 @@ typedef struct _cnWeatherPrivate
 
 	gboolean		exiting;
 
-}cnWeatherPrivate;
+	gboolean		cb_change_by_fill;	/* flag to avoid fill_by_xx make a city change */
+};
 
 static void weather_window_init(cnWeather *window);
 static void weather_window_class_init(cnWeatherClass *klass);
@@ -121,7 +122,7 @@ static void fill_town_real(gpointer data, const gchar **result, gint row, gint c
 
 static void fill_cb(gpointer data, const gchar **result, gint row, gint col, gchar *name);
 
-static void fill_pref_cb_by_town(cnWeather *window);
+static void fill_pref_cb_by_town(cnWeather *window, const gchar *name);
 static void fill_by_town(gpointer data, const gchar **result, gint row, gint col);
 
 /**
@@ -312,7 +313,7 @@ static void weather_window_init(cnWeather *window)
 
 	update_progress(window);
 	g_timeout_add(10, delay_load_settings, window);
-	g_timeout_add_seconds(3, delay_get_weather, window);
+	g_timeout_add(500, delay_get_weather, window);
 }
 
 static void weather_window_class_init(cnWeatherClass *klass)
@@ -598,8 +599,7 @@ static gpointer get_cities_db_thread(gpointer data)
 	{
 		gdk_threads_enter();
 
-		weather_window_set_search_result(window, _("Unable to get "
-						"city database"));
+		weather_window_set_search_result(window, _("Unable to get city database"));
 
 		gdk_threads_leave();
 	}
@@ -778,15 +778,16 @@ static void set_preferences_page(cnWeather *window)
 		}
 	}
 	else
-	  duration = 5;	/* set default value */
+	  duration = 30;	/* set default value */
 
 	weather_window_set_duration(window, duration);
 
 	if (priv->db_file != NULL &&
 		g_file_test(priv->db_file, G_FILE_TEST_EXISTS))
 	{
+		priv->cb_change_by_fill = TRUE;
 		weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
-		fill_pref_cb_by_town(window);
+		priv->cb_change_by_fill = FALSE;
 	}
 
 	dir = g_strdup_printf("%s/%s/themes", g_get_user_config_dir(), PACKAGE_NAME);
@@ -1149,7 +1150,7 @@ static void fill_cb(gpointer data, const gchar **result, gint row, gint col, gch
 	gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
 }
 
-void weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name)
+void weather_window_update_pref_cb(cnWeather *window, gint cb, const gchar *name)
 {
 	g_return_if_fail( window != NULL);
 
@@ -1161,33 +1162,25 @@ void weather_window_update_pref_cb(cnWeather *window, gint cb, gchar *name)
 	}
 }
 
-void weather_window_update_pref_cb_by_town(cnWeather *window, gchar *name)
+void weather_window_update_pref_cb_by_town(cnWeather *window, const gchar *name)
 {
 	g_return_if_fail(window != NULL && name != NULL);
-/*
-	if (window->priv->weather->city)
-	{
-		g_free(window->priv->weather->city);
-		window->priv->weather->city = NULL;
-	}
 
-	window->priv->weather->city = g_strdup(name);
-*/
-	fill_pref_cb_by_town(window);
+	window->priv->cb_change_by_fill = TRUE;
+
+	fill_pref_cb_by_town(window, name);
+
+	window->priv->cb_change_by_fill = FALSE;
 }
 
-static void fill_pref_cb_by_town(cnWeather *window)
+static void fill_pref_cb_by_town(cnWeather *window, const gchar *name)
 {
-/*	gchar *sql = NULL;
+	gchar *sql = NULL;
 
 	g_return_if_fail( window != NULL);
 
-	if (window->priv->weather->city == NULL)
-		return ;
-
 	sql = g_strdup_printf("SELECT pname, cname FROM province p, city c, town t "
-				"WHERE t.tname='%s' AND c.cid=t.cid AND c.pid=p.pid",
-				window->priv->weather->city);
+				"WHERE t.tname='%s' AND c.cid=t.cid AND c.pid=p.pid", name);
 
 	if (sql == NULL)
 	{
@@ -1205,15 +1198,14 @@ static void fill_pref_cb_by_town(cnWeather *window)
 			gint idx;
 			GtkTreeIter iter;
 
-			idx = cb_text_search(GTK_COMBO_BOX(widget), window->priv->weather->city, &iter);
+			idx = cb_text_search(GTK_COMBO_BOX(widget), name, &iter);
 			if (idx >= 0)
 				gtk_combo_box_set_active(GTK_COMBO_BOX(widget), idx);
 		}
 	}
 
 	if (sql)
-	  g_free(sql);*/
-	fill_by_town(NULL, NULL, 0, 0);
+	  g_free(sql);
 }
 
 static void fill_by_town(gpointer data, const gchar **result, gint row, gint col)
@@ -1505,6 +1497,7 @@ static void init_private_members(cnWeatherPrivate *priv)
 	priv->tray = NULL;
 	priv->quit_from_tray = FALSE;
 	priv->exiting = FALSE;
+	priv->cb_change_by_fill = FALSE;
 
 	priv->settings = w_settings_new();
 
@@ -1939,4 +1932,38 @@ gboolean weather_window_test_city(cnWeather *window, const gchar *city)
 	}
 
 	return TRUE;
+}
+
+const gchar* weather_window_get_current_tab_title(cnWeather *window)
+{
+	cnWeatherPrivate *priv;
+	GtkWidget *widget;
+	gint index;
+
+	g_return_val_if_fail(window != NULL, NULL);
+
+	priv = window->priv;
+
+	index = gtk_notebook_get_current_page(GTK_NOTEBOOK(priv->nb_weather));
+	if (index < 0)
+		return NULL;
+
+	widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), index);
+	widget = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), widget);
+
+	return weather_tab_get_title(WEATHER_TAB(widget));
+}
+
+void weather_window_change_city(cnWeather *window, const gchar *city, const gchar *cityid)
+{
+	cnWeatherPrivate *priv;
+
+	priv = window->priv;
+	if (priv->cb_change_by_fill)
+		return ;
+
+	if (g_strcmp0(weather_window_get_current_tab_title(window), city) == 0)
+		return ;
+
+	g_print("city: %s\ncityid: %s\n", city, cityid);
 }
