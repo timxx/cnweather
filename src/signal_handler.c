@@ -376,3 +376,12 @@ void on_weather_button_add_clicked(GtkButton *button, gpointer data)
 {
 	weather_window_add_query_city(WEATHER_WINDOW(main_window));
 }
+
+void on_pref_cb_auto_start_toggled(GtkToggleButton *button, gpointer data)
+{
+	gboolean auto_start;
+
+	auto_start = gtk_toggle_button_get_active(button);
+
+	set_auto_start(auto_start);
+}

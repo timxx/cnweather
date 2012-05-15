@@ -830,6 +830,12 @@ static void set_preferences_page(cnWeather *window)
 	{
 		gtk_combo_box_set_active(GTK_COMBO_BOX(widget), 0);
 	}
+
+	if (check_auto_start())
+	{
+		widget = builder_get_widget(priv->ui_pref, "cb_auto_start");
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
+	}
 }
 
 static gboolean on_window_state(GtkWidget *widget,

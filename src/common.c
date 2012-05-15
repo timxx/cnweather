@@ -1,6 +1,23 @@
 #include <sqlite3.h>
+#include <glib/gstdio.h>
+#include <string.h>
 
 #include "common.h"
+#include "config.h"
+
+static const gchar *desktop_entry =
+{
+	"[Desktop Entry]\n"
+	"Type=Application\n"
+	"Exec="PACKAGE_NAME" -t\n"
+	"Hidden=false\n"
+	"NoDisplay=false\n"
+	"X-GNOME-Autostart-enabled=true\n"
+	"Name=cnWeather\n"
+	"Comment=China Weather\n"
+};
+
+static gchar* desktop_entry_file();
 
 gint confirm_dialog(GtkWidget *parent, const gchar *msg, const gchar *title)
 {
@@ -94,4 +111,120 @@ gint get_image_number_from_uri(const gchar *uri)
 	}
 
 	return number;
+}
+
+gboolean check_auto_start()
+{
+	gchar *file;
+	gboolean auto_start = FALSE;
+
+	file = desktop_entry_file();
+	if (file == NULL)
+		return FALSE;
+
+	do
+	{
+		FILE *fp;
+
+		// file not exists
+		if (!g_file_test(file, G_FILE_TEST_EXISTS))
+			break;
+
+		fp = fopen(file, "r");
+		if (fp == NULL)
+			break;
+
+		do
+		{
+			gchar line[128];
+			gchar **strv;
+			gchar *p;
+			
+			p = fgets(line, 128, fp);
+			if (p == NULL)
+				break;
+
+			strv = g_strsplit(line, "=", 0);
+			if (strv == NULL)
+				continue;
+
+			if (g_strcmp0(strv[0], "X-GNOME-Autostart-enabled") == 0)
+			{
+				if (g_strcmp0(strv[1], "false\n") == 0)
+					auto_start = FALSE;
+				else
+					auto_start = TRUE;
+
+				g_strfreev(strv);
+				break;
+			}
+			g_strfreev(strv);
+		}
+		while(!feof(fp));
+
+		fclose(fp);
+	}
+	while(0);
+
+	g_free(file);
+
+	return auto_start;
+}
+
+gboolean set_auto_start(gboolean auto_start)
+{
+	gchar *file;
+	gboolean result = FALSE;
+
+	file = desktop_entry_file();
+	if (file == NULL)
+		return FALSE;
+
+	do
+	{
+		if (!auto_start)
+		{
+			// no need to change
+			if (!g_file_test(file, G_FILE_TEST_EXISTS))
+			{
+				result = TRUE;
+				break;
+			}
+
+			// just delete it
+			result = (g_remove(file) == 0);
+		}
+		else
+		{
+			FILE *fp;
+			gchar *dir;
+
+			dir = g_path_get_dirname(file);
+			if (dir == NULL)
+				break;
+
+			g_mkdir_with_parents(dir, 0766);
+			g_free(dir);
+
+			fp = fopen(file, "wb+");
+			if (fp == NULL)
+				break;
+
+			fwrite(desktop_entry, sizeof(gchar), strlen(desktop_entry), fp);
+
+			fclose(fp);
+
+			result = TRUE;
+		}
+	}
+	while(0);
+
+	return result;
+}
+
+static gchar* desktop_entry_file()
+{
+	return g_strdup_printf("%s/autostart/%s.desktop",
+				g_get_user_config_dir(),
+				PACKAGE_NAME);
 }
