@@ -88,7 +88,7 @@ static gpointer get_default_city_thread(gpointer data);
 /**
  * set tray icon/tooltips from current weather information
  */
-static void update_tray(cnWeather *window);
+static gboolean update_tray(cnWeather *window);
 
 static void load_settings(cnWeather *window);
 static void save_settings(cnWeather *window);
@@ -172,8 +172,14 @@ static void on_nb_weather_page_reordered(GtkNotebook *notebook,
 			guint        page_num,
 			gpointer     user_data);
 
+static void on_nb_weather_page_switch(GtkNotebook *notebook,
+			GtkWidget   *page,
+			guint        page_num,
+			gpointer     user_data);
 
 static void update_pages_index(cnWeather *window);
+
+static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo *wi);
 
 GType weather_window_get_type()
 {
@@ -291,6 +297,9 @@ static void weather_window_init(cnWeather *window)
 				window);
 	g_signal_connect(priv->nb_weather, "page-reordered",
 				G_CALLBACK(on_nb_weather_page_reordered),
+				window);
+	g_signal_connect(priv->nb_weather, "switch-page",
+				G_CALLBACK(on_nb_weather_page_switch),
 				window);
 
 	priv->db_file = g_strdup_printf("%s/%s/data/cities.db", g_get_user_config_dir(), PACKAGE_NAME);
@@ -629,43 +638,60 @@ void weather_window_set_search_result(cnWeather *window, const gchar *text)
 	weather_window_set_page(window, PAGE_RESULT);
 }
 
-static void update_tray(cnWeather *window)
+static gboolean update_tray(cnWeather *window)
 {
 	cnWeatherPrivate *priv;
+	WeatherInfo *wi;
+	gint index;
 
 	gchar *buffer = NULL;
 
-	g_return_if_fail(window != NULL);
+	g_return_val_if_fail(window != NULL, FALSE);
 
 	priv = window->priv;
 
 	if (window->priv->tray == NULL)
-		return ;
+		return FALSE;
 
-/*	buffer = g_strdup_printf(
+	index = gtk_notebook_get_current_page(GTK_NOTEBOOK(priv->nb_weather));
+	if (index < 0)
+		return FALSE;
+
+	wi = weather_new_info();
+	g_return_val_if_fail(wi != NULL, FALSE);
+	weather_info_from_page(window, index, wi);
+
+	buffer = g_strdup_printf(
 				"<b>%s</b>\n"
 				"%s\n"
 				"%s\n"
 				"%s"
 				,
-				priv->weather->city,
-				priv->weather->weather[0].weather,
-				priv->weather->weather[0].temperature,
-				priv->weather->weather[0].wind
+				wi->city,
+				wi->weather[0].weather,
+				wi->weather[0].temperature,
+				wi->weather[0].wind
 			);
-*/
 	if (buffer == NULL)
-		return ;
+	{
+		weather_free_info(wi);
+		return FALSE;
+	}
 
 	weather_tray_set_tooltips(priv->tray, buffer);
 	g_free(buffer);
 
-//	buffer = get_theme_img_file(window, window->priv->weather->weather[0].img);
+	buffer = get_theme_img_file(window, wi->weather[0].img);
 	if (buffer)
 	{
 		weather_tray_set_icon(window->priv->tray, buffer);
 		g_free(buffer);
 	}
+
+	weather_free_info(wi);
+	g_free(wi);
+
+	return FALSE;
 }
 
 wSettings* weather_window_get_settings(cnWeather *window)
@@ -1807,24 +1833,7 @@ void weather_window_add_query_city(cnWeather *window)
 		g_object_get(widget, "file", &image, NULL);
 		if (image)
 		{
-			gchar *name;
-			name = g_path_get_basename(image);
-			if (name)
-			{
-				gchar *p = name;
-				gchar *digit;
-				if (*p == 'n') //nXXX.png
-					p++;
-
-				digit = p;
-				while (*p != '.')
-				   p++;
-				*p = 0;
-
-				wi->weather[i].img = g_strtod(digit, NULL);
-
-				g_free(name);
-			}
+			wi->weather[i].img = get_image_number_from_uri(image);
 			g_free(image);
 		}
 	}
@@ -1866,10 +1875,17 @@ static void on_nb_weather_page_removed(GtkNotebook *notebook,
 
 	gtk_widget_destroy(child);
 
-	update_pages_index(window);
-
-	// update weather
-	get_weather_timer(window);
+	if (g_list_length(priv->cityid_list) == 0)
+	{
+		// empty settings
+		w_settings_set_weather(priv->settings, NULL);
+	}
+	else
+	{
+		update_pages_index(window);
+		// update weather
+		get_weather_timer(window);
+	}
 }
 
 static void on_nb_weather_page_reordered(GtkNotebook *notebook,
@@ -1896,6 +1912,17 @@ static void on_nb_weather_page_reordered(GtkNotebook *notebook,
 
 	update_pages_index(window);
 	get_weather_timer(window);
+}
+
+static void on_nb_weather_page_switch(GtkNotebook *notebook,
+			GtkWidget   *page,
+			guint        page_num,
+			gpointer     user_data)
+{
+	// Call update_tray directly will cause
+	// gtk_notebook_get_current_page return last page
+	// rather than page_num
+	g_idle_add((GSourceFunc)update_tray, user_data);
 }
 
 static void update_pages_index(cnWeather *window)
@@ -1957,6 +1984,9 @@ const gchar* weather_window_get_current_tab_title(cnWeather *window)
 void weather_window_change_city(cnWeather *window, const gchar *city, const gchar *cityid)
 {
 	cnWeatherPrivate *priv;
+	gint index;
+	GtkWidget *widget;
+	GList *list;
 
 	priv = window->priv;
 	if (priv->cb_change_by_fill)
@@ -1965,5 +1995,50 @@ void weather_window_change_city(cnWeather *window, const gchar *city, const gcha
 	if (g_strcmp0(weather_window_get_current_tab_title(window), city) == 0)
 		return ;
 
-	g_print("city: %s\ncityid: %s\n", city, cityid);
+	//g_print("city: %s\ncityid: %s\n", city, cityid);
+	
+	index = gtk_notebook_get_current_page(GTK_NOTEBOOK(priv->nb_weather));
+	if (index == -1) /* no page present yet */
+	{
+		// indicate user to new weather page
+		weather_window_get_weather(window, cityid);
+	}
+	else
+	{
+		widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), index);
+		widget = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), widget);
+
+		// update tab title
+		weather_tab_set_title(WEATHER_TAB(widget), city);
+
+		// update city id list
+		list = g_list_nth(priv->cityid_list, index);
+		if (list)
+		{
+			g_free(list->data);
+			list->data = g_strdup(cityid);
+		}
+
+		// update weather
+		get_weather_timer(window);
+	}
+}
+
+static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo *wi)
+{
+	cnWeatherPrivate *priv;
+	GtkWidget *widget;
+	
+	g_return_if_fail(window != NULL && wi != NULL);
+
+	priv = window->priv;
+
+	widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), page_num);
+	if (widget == NULL)
+		return ;
+
+	weather_page_get_weather_info(WEATHER_PAGE(widget), wi);
+
+	widget = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), widget);
+	wi->city = g_strdup(weather_tab_get_title(WEATHER_TAB(widget)));
 }

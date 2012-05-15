@@ -33,4 +33,16 @@ void		weather_widget_set_temperature(WeatherWidget *widget, const gchar *text);
 void		weather_widget_set_weather(WeatherWidget *widget, const gchar *text);
 void		weather_widget_set_wind(WeatherWidget *widget, const gchar *text);
 
+const gchar*
+weather_widget_get_temperature(WeatherWidget *widget);
+
+const gchar*
+weather_widget_get_weather(WeatherWidget *widget);
+
+gchar*
+weather_widget_get_wind(WeatherWidget *widget);
+
+gint
+weather_widget_get_image(WeatherWidget *widget);
+
 #endif /* */

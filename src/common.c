@@ -70,3 +70,28 @@ gint sql_query(const gchar *dbfile, const gchar *sql,
 	return ret;
 }
 
+gint get_image_number_from_uri(const gchar *uri)
+{
+	gchar *name;
+	gint number = 0;
+
+	name = g_path_get_basename(uri);
+	if (name)
+	{
+		gchar *p = name;
+		gchar *digit;
+		if (*p == 'n') //nXXX.png
+			p++;
+
+		digit = p;
+		while (*p != '.')
+		  p++;
+		*p = 0;
+
+		number = g_strtod(digit, NULL);
+
+		g_free(name);
+	}
+
+	return number;
+}

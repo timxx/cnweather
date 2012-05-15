@@ -1,6 +1,7 @@
 
 #include "weatherwidget.h"
 #include "config.h"
+#include "common.h"
 
 #define WEATHER_WIDGET_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), weather_widget_get_type(), WeatherWidgetPrivate))
 
@@ -105,4 +106,46 @@ void weather_widget_set_wind(WeatherWidget *widget, const gchar *text)
 	g_return_if_fail(widget != NULL);
 
 	gtk_widget_set_tooltip_text(widget->priv->image, text);
+}
+
+const gchar*
+weather_widget_get_temperature(WeatherWidget *widget)
+{
+	g_return_val_if_fail(widget != NULL, NULL);
+
+	return gtk_label_get_text(GTK_LABEL(widget->priv->temperature));
+}
+
+const gchar*
+weather_widget_get_weather(WeatherWidget *widget)
+{
+	g_return_val_if_fail(widget != NULL, NULL);
+
+	return gtk_label_get_text(GTK_LABEL(widget->priv->weather));
+}
+
+gchar*
+weather_widget_get_wind(WeatherWidget *widget)
+{
+	g_return_val_if_fail(widget != NULL, NULL);
+
+	return gtk_widget_get_tooltip_text(widget->priv->image);
+}
+
+gint
+weather_widget_get_image(WeatherWidget *widget)
+{
+	gchar *file;
+	gint image = 0;
+
+	g_return_val_if_fail(widget != NULL, 0);
+
+	g_object_get(widget->priv->image, "file", &file, NULL);
+	if (file)
+	{
+		image = get_image_number_from_uri(file);
+		g_free(file);
+	}
+
+	return image;
 }

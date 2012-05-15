@@ -150,7 +150,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 	gchar **weather[3] = {NULL};
 	gchar **img[3] = {NULL};
 
-	g_return_val_if_fail(sett != NULL && list != NULL, FALSE);
+	g_return_val_if_fail(sett != NULL, FALSE);
 
 	count = g_list_length(list);
 	if (count > 0)

@@ -44,10 +44,10 @@ GtkWidget* weather_page_new()
     return g_object_new(TYPE_WEATHER_PAGE,
 				"spacing", 20,
 				"expand", FALSE,
-				"margin-left", 20,
-				"margin-top", 50,
-				"valign", GTK_ALIGN_START,
-				"halign", GTK_ALIGN_START,
+				//"margin-left", 20,
+				//"margin-top", 50,
+				"valign", GTK_ALIGN_CENTER,
+				"halign", GTK_ALIGN_CENTER,
 				NULL);
 }
 
@@ -111,4 +111,31 @@ gint weather_page_get_index(WeatherPage *page)
 	g_return_val_if_fail(page != NULL, -1);
 
 	return page->priv->index;
+}
+
+void weather_page_get_weather_info(WeatherPage *page, WeatherInfo *wi)
+{
+	gint i;
+	WeatherPagePrivate *priv;
+
+	g_return_if_fail(page != NULL && wi != NULL);
+
+	priv = page->priv;
+
+	for(i=0; i<TOTAL_WIDGETS; ++i)
+	{
+		wi->weather[i].temperature = g_strdup(
+			weather_widget_get_temperature(WEATHER_WIDGET(priv->widget[i]))
+			);
+
+		wi->weather[i].weather = g_strdup(
+			weather_widget_get_weather(WEATHER_WIDGET(priv->widget[i]))
+			);
+
+		wi->weather[i].wind =
+			weather_widget_get_wind(WEATHER_WIDGET(priv->widget[i]));
+
+		wi->weather[i].img =
+			weather_widget_get_image(WEATHER_WIDGET(priv->widget[i]));
+	}
 }
