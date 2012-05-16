@@ -18,6 +18,7 @@ static const gchar *desktop_entry =
 };
 
 static gchar* desktop_entry_file();
+static void _get_full_city(gpointer data, const gchar **result, gint row, gint col);
 
 gint confirm_dialog(GtkWidget *parent, const gchar *msg, const gchar *title)
 {
@@ -227,4 +228,51 @@ static gchar* desktop_entry_file()
 	return g_strdup_printf("%s/autostart/%s.desktop",
 				g_get_user_config_dir(),
 				PACKAGE_NAME);
+}
+
+gchar *
+get_full_city(const gchar *db_file, const gchar *city_id)
+{
+	gchar *city = NULL;
+	gchar *sql;
+
+	sql = g_strdup_printf("SELECT pname, cname, tname FROM province p, "
+				"city c, town t WHERE t.city_id='%s' AND "
+				"c.cid=t.cid AND p.pid=c.pid",
+				city_id);
+	if (sql == NULL)
+		return NULL;
+
+	sql_query(db_file, sql, _get_full_city, &city);
+
+	g_free(sql);
+
+	return city;
+}
+
+static void _get_full_city(gpointer data, const gchar **result, gint row, gint col)
+{
+	const gchar *p, *c, *t;
+
+	if (result == NULL || row == 0)
+		return ;
+
+	p = result[col];
+	c = result[col + 1];
+	t = result[col + 2];
+
+	if (g_strcmp0(t, c) == 0 &&
+		g_strcmp0(t, p) == 0
+	   )
+	{
+		*((gchar **)data) = g_strdup_printf("%s", t);
+	}
+	else if(g_strcmp0(p, c) == 0)
+	{
+		*((gchar **)data) = g_strdup_printf("%s>%s", c, t);
+	}
+	else
+	{
+		*((gchar **)data) = g_strdup_printf("%s>%s>%s", p, c, t);
+	}
 }

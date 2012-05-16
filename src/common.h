@@ -20,4 +20,12 @@ check_auto_start();
 gboolean
 set_auto_start(gboolean auto_start);
 
+
+/**
+ * get full city name from city id
+ * format: PROVINCE>CITY>TOWN
+ */
+gchar *
+get_full_city(const gchar *db_file, const gchar *city_id);
+
 #endif /* __CONFIRM_DIALOG_H__ */

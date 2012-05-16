@@ -31,4 +31,6 @@ GType			weather_tab_get_type();
 void			weather_tab_set_title(WeatherTab *tab, const gchar *title);
 const gchar*	weather_tab_get_title(WeatherTab *tab);
 
+void			weather_tab_set_tooltip(WeatherTab *tab, const gchar *text);
+
 #endif /* __WEATHER_TAB_H__ */

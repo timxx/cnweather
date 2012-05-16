@@ -190,3 +190,8 @@ const gchar* weather_tab_get_title(WeatherTab *tab)
 
 	return gtk_label_get_text(GTK_LABEL(tab->priv->label_title));
 }
+
+void weather_tab_set_tooltip(WeatherTab *tab, const gchar *text)
+{
+	gtk_widget_set_tooltip_text(GTK_WIDGET(tab), text);
+}

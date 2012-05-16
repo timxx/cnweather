@@ -1507,6 +1507,7 @@ static void append_weather_page(cnWeather *window, WeatherInfo *wi)
 	GtkWidget *page;
 	GtkWidget *tab;
 	gint index;
+	gchar *city;
 
 	priv = window->priv;
 
@@ -1517,6 +1518,12 @@ static void append_weather_page(cnWeather *window, WeatherInfo *wi)
 	weather_page_set_index(WEATHER_PAGE(page), index);
 	weather_tab_set_title(WEATHER_TAB(tab), wi->city);
 	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(priv->nb_weather), page, TRUE);
+	city = get_full_city(priv->db_file, wi->city_id);
+	if (city)
+	{	
+		weather_tab_set_tooltip(WEATHER_TAB(tab), city);
+		g_free(city);
+	}
 
 	priv->cityid_list = g_list_append(priv->cityid_list, g_strdup(wi->city_id));
 
@@ -2011,11 +2018,19 @@ void weather_window_change_city(cnWeather *window, const gchar *city, const gcha
 	}
 	else
 	{
+		gchar *full_city;
+
 		widget = gtk_notebook_get_nth_page(GTK_NOTEBOOK(priv->nb_weather), index);
 		widget = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), widget);
 
 		// update tab title
 		weather_tab_set_title(WEATHER_TAB(widget), city);
+		full_city = get_full_city(priv->db_file, cityid);
+		if (full_city)
+		{
+			weather_tab_set_tooltip(WEATHER_TAB(widget), full_city);
+			g_free(full_city);
+		}
 
 		// update city id list
 		list = g_list_nth(priv->cityid_list, index);
