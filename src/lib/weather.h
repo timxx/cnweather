@@ -75,7 +75,7 @@ gint weather_set_proxy(wSession *ws, ProxyInfo *pi);
 WeatherInfo *weather_new_info();
 
 /**
- * free WeatherInfo->weather & city only
+ * free WeatherInfo
  * @wi
  */
 void weather_free_info(WeatherInfo *wi);

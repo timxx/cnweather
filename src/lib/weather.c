@@ -309,6 +309,8 @@ void weather_free_info(WeatherInfo *wi)
 		if (wi->city_id){
 			g_free(wi->city_id);
 		}
+
+		g_free(wi);
 	}
 }
 

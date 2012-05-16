@@ -1,3 +1,5 @@
+#include <curl/curl.h>
+
 #include "cnWeather.h"
 #include "intl.h"
 #include "config.h"
@@ -149,8 +151,6 @@ static gint		get_cur_time_hour();
  */
 static gint set_theme_list(cnWeather *window, const gchar *theme_dir, gint count);
 
-static void free_weather_info(gpointer data);
-
 static void init_weather_page(cnWeather *window, GList *list);
 static void append_weather_page(cnWeather *window, WeatherInfo *wi);
 
@@ -180,6 +180,8 @@ static void on_nb_weather_page_switch(GtkNotebook *notebook,
 static void update_pages_index(cnWeather *window);
 
 static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo *wi);
+
+static void show_get_weather_fail_info(cnWeather *window, gint code);
 
 GType weather_window_get_type()
 {
@@ -480,8 +482,7 @@ static gpointer get_weather_thread(gpointer data)
 		else
 		{
 			gdk_threads_enter();
-			weather_window_set_search_result(window, 
-						_("Couldn't get weather! \nPlease check out your networks"));
+			show_get_weather_fail_info(window, ret);
 			gdk_threads_leave();
 		}
 	
@@ -584,25 +585,20 @@ static gpointer get_cities_db_thread(gpointer data)
 
 	if (status == 0)
 	{
-/*		guint city_id;
-
-		city_id = priv->city_id;
 		gdk_threads_enter();
+
+		priv->cb_change_by_fill = TRUE;
+
 		weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
+
+		// assume current page is preferences
+		weather_window_update_pref_cb_by_town(window,
+					weather_window_get_current_tab_title(window)
+					);
+
+		priv->cb_change_by_fill = FALSE;
+
 		gdk_threads_leave();
-	
-		if (city_id == 0 || city_id != priv->city_id)
-		{
-			gdk_threads_enter();
-			weather_window_get_weather(window, city_id);
-			gdk_threads_leave();
-
-			g_usleep(3 * G_USEC_PER_SEC);
-
-			gdk_threads_enter();
-			fill_pref_cb_by_town(window);
-			gdk_threads_leave();
-		}*/
 	}
 	else
 	{
@@ -632,7 +628,7 @@ void weather_window_set_search_result(cnWeather *window, const gchar *text)
 
 	label = builder_get_widget(window->priv->ui_search, "label_result");
 	if (label) {
-		gtk_label_set_text(GTK_LABEL(label), text);
+		gtk_label_set_markup(GTK_LABEL(label), text);
 	}
 
 	weather_window_set_page(window, PAGE_RESULT);
@@ -689,7 +685,6 @@ static gboolean update_tray(cnWeather *window)
 	}
 
 	weather_free_info(wi);
-	g_free(wi);
 
 	return FALSE;
 }
@@ -750,7 +745,7 @@ static void load_settings(cnWeather *window)
 		if (weather_list)
 		{
 			init_weather_page(window, weather_list);
-			g_list_free_full(weather_list, free_weather_info);
+			g_list_free_full(weather_list, (GDestroyNotify)weather_free_info);
 		}
 	}
 
@@ -1478,12 +1473,6 @@ void weather_window_set_theme(cnWeather *window, const gchar *theme)
 	w_settings_set_theme(window->priv->settings, theme);
 }
 
-static void free_weather_info(gpointer data)
-{
-	weather_free_info((WeatherInfo *)data);
-	g_free(data);
-}
-
 static void init_weather_page(cnWeather *window, GList *list)
 {
 	GList *p;
@@ -1576,6 +1565,7 @@ static gpointer update_weather_thread(gpointer data)
 	GList *p;
 	gint tab;
 	GList *list = NULL;
+	gint code;
 
 	window = (cnWeather *)data;
 	priv = window->priv;
@@ -1599,7 +1589,7 @@ static gpointer update_weather_thread(gpointer data)
 		ws = weather_open();
 
 		wi->city_id = g_strdup((gchar *)p->data);
-		if (weather_get(ws, wi) == 0)
+		if ((code = weather_get(ws, wi)) == 0)
 		{
 			gdk_threads_enter();
 			update_page(window, tab, wi);
@@ -1610,8 +1600,7 @@ static gpointer update_weather_thread(gpointer data)
 		else
 		{
 			gdk_threads_enter();
-			weather_window_set_search_result(window, 
-						_("Couldn't get weather! \nPlease check out your networks"));
+			show_get_weather_fail_info(window, code);
 			gdk_threads_leave();
 		}
 
@@ -1624,7 +1613,7 @@ static gpointer update_weather_thread(gpointer data)
 	if (list)
 	{
 		w_settings_set_weather(window->priv->settings, list);
-		g_list_free_full(list, free_weather_info);
+		g_list_free_full(list, (GDestroyNotify)weather_free_info);
 	}
 
 	g_mutex_lock(priv->mutex);
@@ -1673,6 +1662,8 @@ static gpointer get_default_city_thread(gpointer data)
 	wSession *ws;
 	WeatherInfo *wi;
 
+	gint code;
+
 	window = (cnWeather *)data;
 	priv = window->priv;
 
@@ -1687,7 +1678,7 @@ static gpointer get_default_city_thread(gpointer data)
 	wi = weather_new_info();
 	ws = weather_open();
 
-	if (weather_get(ws, wi) == 0)
+	if ( (code = weather_get(ws, wi)) == 0)
 	{
 		GList *list = NULL;
 
@@ -1704,9 +1695,8 @@ static gpointer get_default_city_thread(gpointer data)
 	}
 	else
 	{
-		gdk_threads_enter();
-		weather_window_set_search_result(window, 
-						_("Couldn't get weather! \nPlease check out your networks"));
+		gdk_threads_enter(); 
+		show_get_weather_fail_info(window, code);
 		gdk_threads_leave();
 	}
 
@@ -2062,4 +2052,18 @@ static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo
 
 	widget = gtk_notebook_get_tab_label(GTK_NOTEBOOK(priv->nb_weather), widget);
 	wi->city = g_strdup(weather_tab_get_title(WEATHER_TAB(widget)));
+}
+
+static void show_get_weather_fail_info(cnWeather *window, gint code)
+{
+	gchar *info;
+
+	info = g_strdup_printf("<b>Couldn't get weather information:</b>\n"
+				"<i>%s</i>",
+				curl_easy_strerror(code)
+				);
+
+	weather_window_set_search_result(window, info);
+
+	g_free(info);
 }

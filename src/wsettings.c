@@ -304,9 +304,23 @@ gboolean w_settings_set_theme(wSettings *sett, const gchar *theme)
 	return g_settings_set_string(G_SETTINGS(sett), "theme", theme);
 }
 
-gint w_settings_get_city_id(wSettings *sett)
+GList* w_settings_get_city_id_list(wSettings *sett)
 {
+	GList *list = NULL;
+	gchar **city_id;
+	gint i = 0;
+
 	g_return_val_if_fail(sett != NULL, 0);
 
-	return g_settings_get_int(G_SETTINGS(sett), "city-id");
+	city_id = g_settings_get_strv(G_SETTINGS(sett), "city-id");
+	if (city_id == NULL)
+		return NULL;
+
+	while(city_id[i])
+	{
+		list = g_list_append(list, city_id[i]);
+		i++;
+	}
+
+	return list;
 }
