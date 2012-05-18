@@ -36,7 +36,7 @@ static void show_help();
 
 static gint		update_cache();
 
-static gint		get_weather(gchar *city_id, WeatherInfo *wi);
+static gint		get_weather(const gchar *city_id, WeatherInfo *wi);
 static gchar*	get_city_id(const gchar *city);
 
 static void		print_weather_info(WeatherInfo *wi);
@@ -46,6 +46,9 @@ static void		query_city_id(gpointer data, const gchar **result, gint row, gint c
 static void		signal_handler(int signum);
 
 static void		print_get_weather_fail_info(gint code);
+
+static gint		list_city_weather(GList *list, wSettings *sett);
+static gint		get_city_weather(const gchar *city_id);
 
 int main(int argc, char **argv)
 {
@@ -73,7 +76,11 @@ int main(int argc, char **argv)
 	}
 
 	if (!g_thread_supported())
+#if GLIB_CHECK_VERSION(2, 32, 0)
 		g_warning("gthread not supported!\n");
+#else
+		g_thread_init(NULL);
+#endif
 
 	gdk_threads_init();
 
@@ -134,10 +141,11 @@ static int do_xterm(int argc, char **argv)
 	gchar *city = NULL;
 	gchar *city_id = NULL;
 	gchar *target_city_id = NULL;
+
+	gboolean need_free_cityid = FALSE;
 	
 	GList *city_id_list = NULL;
 
-	WeatherInfo *wi = NULL;
 	wSettings *sett = NULL;
 
 	while( (c=getopt_long(argc, argv, opts, long_opts, NULL)) != -1)
@@ -180,14 +188,11 @@ static int do_xterm(int argc, char **argv)
 
 	g_type_init();
 
-	wi = weather_new_info();
-	if (wi == NULL)
-	{
-		g_print("failed to malloc memory (%s, %d)\n", __FILE__, __LINE__);
-		return EXIT_FAILURE;
-	}
-
 	sett = w_settings_new();
+	if (sett == NULL)
+	{
+		g_error("w_settings_new failed\n");
+	}
 
 	/* if city_id and city both specifies */
 	/* only city_id will check */
@@ -200,67 +205,38 @@ static int do_xterm(int argc, char **argv)
 	{
 		gchar *cid;
 		cid = get_city_id(city);
-		if (cid == 0){
+		if (cid == 0)
+		{
 			g_print(_("No city found: %s\n"), city);
-		}else{
+			g_object_unref(sett);
+
+			return EXIT_SUCCESS;
+		}
+		else
+		{
+			need_free_cityid = TRUE;
 			target_city_id = cid;
 		}
 	}
 	else if(no_gui)
 	{
-		if (sett)
-			city_id_list = w_settings_get_city_id_list(sett);
+		city_id_list = w_settings_get_city_id_list(sett);
 	}
 
 	if (city_id_list)
 	{
-		GList *p = city_id_list;
-		GList *weather_list = NULL;
-
-		while(p)
-		{
-			WeatherInfo *info;
-
-			info = weather_new_info();
-			if (info == NULL)
-			{
-				g_error("weather_info_new failed\n");
-			}
-
-			status = get_weather(p->data, info);
-			if (status != 0)
-			{
-				print_get_weather_fail_info(status);
-				break;
-			}
-
-			print_weather_info(info);
-			weather_list = g_list_append(weather_list, info);
-
-			p = p->next;
-		}
-
-		if (sett)
-		  w_settings_set_weather(sett, weather_list);
-
-		g_list_free_full(weather_list, (GDestroyNotify)weather_free_info);
+		status = list_city_weather(city_id_list, sett);
 		g_list_free_full(city_id_list, g_free);
 	}
 	else
 	{
-		status = get_weather(target_city_id, wi);
-		if (status != 0)
-			print_get_weather_fail_info(status);
-		else
-			print_weather_info(wi);
+		status = get_city_weather(target_city_id);
 	}
 
-	if (sett)
-	{
-		g_object_unref(sett);
-	}
+	if (need_free_cityid)
+		g_free(target_city_id);
 
-	weather_free_info(wi);
+	g_object_unref(sett);
 
 	return status;
 }
@@ -313,7 +289,7 @@ static gint update_cache()
 	return ret;
 }
 
-static gint	get_weather(gchar *city_id, WeatherInfo *wi)
+static gint	get_weather(const gchar *city_id, WeatherInfo *wi)
 {
 	gint status;
 	wSession *ws;
@@ -392,4 +368,66 @@ static void	signal_handler(int signum)
 static void	print_get_weather_fail_info(gint code)
 {
 	g_print(_("Unable to get weather information:\n%s\n"), curl_easy_strerror(code));
+}
+
+static gint	list_city_weather(GList *list, wSettings *sett)
+{
+	GList *p = list;
+	GList *weather_list = NULL;
+	gint status = EXIT_FAILURE;
+
+	while(p)
+	{
+		WeatherInfo *info;
+
+		info = weather_new_info();
+		if (info == NULL)
+		{
+			g_error("weather_info_new failed\n");
+		}
+
+		status = get_weather(p->data, info);
+		if (status != 0)
+		{
+			print_get_weather_fail_info(status);
+			break;
+		}
+
+		print_weather_info(info);
+		g_print("\n");
+		weather_list = g_list_append(weather_list, info);
+
+		p = p->next;
+
+		status = EXIT_SUCCESS;
+	}
+
+	w_settings_set_weather(sett, weather_list);
+
+	g_list_free_full(weather_list, (GDestroyNotify)weather_free_info);
+
+	return status;
+}
+
+static gint	get_city_weather(const gchar *city_id)
+{
+	WeatherInfo *wi = NULL;
+	gint status = EXIT_SUCCESS;
+
+	wi = weather_new_info();
+	if (wi == NULL)
+	{
+		g_print("weather_new_info failed (%s, %d)\n", __FILE__, __LINE__);
+		return EXIT_FAILURE;
+	}
+
+	status = get_weather(city_id, wi);
+	if (status != 0)
+		print_get_weather_fail_info(status);
+	else
+		print_weather_info(wi);
+
+	weather_free_info(wi);
+
+	return status;
 }

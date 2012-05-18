@@ -42,9 +42,9 @@ GLIB_GSETTINGS
 
 # Checks for libraries
 PKG_CHECK_MODULES(GTK, [gtk+-3.0 >= 3.2, gmodule-export-2.0])
-PKG_CHECK_MODULES(LIBCURL, [libcurl])
-PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.32.1])
-PKG_CHECK_MODULES(SQLITE3, [sqlite3 >= 3.7.9])
+PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.21])
+PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.30])
+PKG_CHECK_MODULES(SQLITE3, [sqlite3 >= 3.7])
 
 AC_CONFIG_FILES([Makefile
 		src/Makefile

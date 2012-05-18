@@ -9,9 +9,9 @@ Build-Depends:	debhelper (>= 8.0.0),
 				autotools-dev,
 				libgtk-3-dev(>= 3.2),
 				intltool (>= 0.40.0),
-				libglib2.0-dev (>= 2.31.0),
-				libsqlite3-dev (>= 3.7.9),
-				libcurl4-openssl-dev (>= 7.22.0)
+				libglib2.0-dev (>= 2.30),
+				libsqlite3-dev (>= 3.7),
+				libcurl4-openssl-dev (>= 7.21)
 
 Package: cnweather
 Architecture: any

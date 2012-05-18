@@ -183,6 +183,8 @@ static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo
 
 static void show_get_weather_fail_info(cnWeather *window, gint code);
 
+static gboolean thread_finish(gpointer data);
+
 GType weather_window_get_type()
 {
     static GType type = 0;
@@ -360,8 +362,12 @@ static void weather_window_finalize(GObject *obj)
 
 	if (priv->mutex)
 	{
+#if GLIB_CHECK_VERSION(2, 32, 0)
 		g_mutex_clear(priv->mutex);
 		g_free(priv->mutex);
+#else
+		g_mutex_free(priv->mutex);
+#endif
 	}
 
 	if (priv->timer)
@@ -424,7 +430,11 @@ void weather_window_get_weather(cnWeather *window, const gchar *city_id)
 
 	priv->city_id = g_strdup(city_id);
 	if (window->priv->ready_for_weather)
+#if	GLIB_CHECK_VERSION(2, 32, 0)
 		g_thread_new("GetWeather", get_weather_thread, window);
+#else
+		g_thread_create(get_weather_thread, window, FALSE, NULL);
+#endif
 
 }
 
@@ -499,7 +509,7 @@ static gpointer get_weather_thread(gpointer data)
 	update_progress(window);
 	gdk_threads_leave();
 
-	g_thread_unref(g_thread_self());
+	g_idle_add(thread_finish, g_thread_self());
 
 	return NULL;
 }
@@ -615,7 +625,7 @@ static gpointer get_cities_db_thread(gpointer data)
 	update_progress(window);
 	gdk_threads_leave();
 
-	g_thread_unref(g_thread_self());
+	g_idle_add(thread_finish, g_thread_self());
 
 	return NULL;
 }
@@ -938,7 +948,11 @@ void weather_window_update_cache(cnWeather *window)
 	g_return_if_fail( window != NULL);
 
 	if (!window->priv->getting_db)
+#if GLIB_CHECK_VERSION(2, 32, 0)
 		g_thread_new("GetCitisDb", get_cities_db_thread, window);
+#else
+		g_thread_create(get_cities_db_thread, window, FALSE, NULL);
+#endif
 }
 
 static void valid_window_size(cnWeather *window, gint *w, gint *h)
@@ -1323,7 +1337,11 @@ static gboolean delay_get_weather(gpointer data)
 	/* try to get default city by ip */
 	if (priv->cityid_list == NULL)
 	{
+#if GLIB_CHECK_VERSION(2, 32, 0)
 		g_thread_new("GetDefaultCity", get_default_city_thread, window);
+#else
+		g_thread_create(get_default_city_thread, window, FALSE, NULL);
+#endif
 	}
 	else 
 	{
@@ -1338,7 +1356,11 @@ static gboolean get_weather_timer(gpointer data)
 	cnWeather *window = (cnWeather *)data;
 
 	if (window->priv->ready_for_weather)
+#if GLIB_CHECK_VERSION(2, 32, 0)
 		g_thread_new("GetWeathers", update_weather_thread, window);
+#else
+		g_thread_create(update_weather_thread, window, FALSE, NULL);
+#endif
 
 	return TRUE;
 }
@@ -1543,11 +1565,15 @@ static void init_private_members(cnWeatherPrivate *priv)
 		g_error("UI files missing!\n");
 	}
 
+#if GLIB_CHECK_VERSION(2, 32, 0)
 	priv->mutex = g_malloc(sizeof(GMutex));
 	if (priv->mutex == NULL)
 		g_error("g_malloc failed (%s, %d)\n", __FILE__, __LINE__);
-
 	g_mutex_init(priv->mutex);
+#else
+	priv->mutex = g_mutex_new();
+#endif
+	
 
 	priv->getting_weather = FALSE;
 	priv->getting_db = FALSE;
@@ -1624,7 +1650,7 @@ static gpointer update_weather_thread(gpointer data)
 	update_progress(window);
 	gdk_threads_leave();
 
-	g_thread_unref(g_thread_self());
+	g_idle_add(thread_finish, g_thread_self());
 
 	return NULL;
 }
@@ -1711,7 +1737,7 @@ static gpointer get_default_city_thread(gpointer data)
 	update_progress(window);
 	gdk_threads_leave();
 
-	g_thread_unref(g_thread_self());
+	g_idle_add(thread_finish, g_thread_self());
 
 	return NULL;
 }
@@ -2066,4 +2092,16 @@ static void show_get_weather_fail_info(cnWeather *window, gint code)
 	weather_window_set_search_result(window, info);
 
 	g_free(info);
+}
+
+static gboolean thread_finish(gpointer data)
+{
+	if (data)
+	{
+#if GLIB_CHECK_VERSION(2, 32, 0)
+		g_thread_unref((GThread *)data);
+#endif
+	}
+
+	return FALSE;
 }

@@ -36,7 +36,11 @@ GType w_settings_get_type()
 wSettings* w_settings_new()
 {
     return W_SETTINGS(g_object_new(W_TYPE_SETTINGS,
+#if GLIB_CHECK_VERSION(2, 32, 0)
 					"schema-id", "com.timxx.cnweather",
+#else
+					"schema", "com.timxx.cnweather",
+#endif
 					NULL));
 }
 

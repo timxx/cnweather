@@ -43,8 +43,8 @@ gint sql_query(const gchar *dbfile, const gchar *sql,
 			void (*deal_func)(gpointer, const gchar **, gint, gint),
 			gpointer data)
 {
-	sqlite3 *db;
-	gchar **result;
+	sqlite3 *db = NULL;
+	gchar **result = NULL;
 	gint row, col;
 
 	gint ret = -1;
@@ -270,6 +270,10 @@ static void _get_full_city(gpointer data, const gchar **result, gint row, gint c
 	else if(g_strcmp0(p, c) == 0)
 	{
 		*((gchar **)data) = g_strdup_printf("%s>%s", c, t);
+	}
+	else if(g_strcmp0(c, t) == 0)
+	{
+		*((gchar **)data) = g_strdup_printf("%s>%s", p, c);
 	}
 	else
 	{
