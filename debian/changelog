@@ -1,14 +1,28 @@
+cnweather (0.2.0~oneiric) oneiric; urgency=low
+
+  * oneiric
+
+ -- Weitian Leung <weitianleung@gmail.com>  Sat, 19 May 2012 09:38:47 +0800
+
+cnweather (0.2.0~precise) precise; urgency=low
+
+  * New features:
+    - Multiple cities supports
+    - Easy auto start control
+
+ -- Weitian Leung <weitianleung@gmail.com>  Sat, 19 May 2012 09:24:15 +0800
+
 cnweather (0.1.2) precise; urgency=low
 
   * Added signal handler
 
- -- Weitian Leung <weitianleung@gmail.com>  Tue, 08 May 2012 18:09:46 +0800  
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 08 May 2012 18:09:46 +0800
 
 cnweather (0.1.1) precise; urgency=low
 
   * Fixed a bug
 
- -- Weitian Leung <weitianleung@gmail.com>  Tue, 08 May 2012 00:26:04 +0800 
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 08 May 2012 00:26:04 +0800
 
 cnweather (0.1.0-1~20120501) precise; urgency=low
 

@@ -590,9 +590,7 @@ static gpointer get_cities_db_thread(gpointer data)
 	update_progress(window);
 	gdk_threads_leave();
 
-	if (weather_get_city_db(priv->db_file) != 0)
-		status = weather_get_city_list(priv->db_file);
-
+	status = weather_get_city_db(priv->db_file);
 	if (status == 0)
 	{
 		gdk_threads_enter();
@@ -964,9 +962,9 @@ static void valid_window_size(cnWeather *window, gint *w, gint *h)
 	scrx 	= gdk_screen_get_width (screen);
 	scry 	= gdk_screen_get_height(screen);
 
-	if (*w > scrx)
+	if (*w > scrx || *w <= 0 )
 	   *w = WIN_DEFAULT_WIDTH;
-	if (*h > scry)
+	if (*h > scry || *h <= 0)
 	   *h = WIN_DEFAULT_HEIGHT;
 }
 

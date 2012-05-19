@@ -283,8 +283,6 @@ static gint update_cache()
 	g_return_val_if_fail(db_file != NULL, -1);
 
 	ret = weather_get_city_db(db_file);
-	if (ret != 0)
-		ret = weather_get_city_list(db_file);
 
 	return ret;
 }
