@@ -28,4 +28,10 @@ set_auto_start(gboolean auto_start);
 gchar *
 get_full_city(const gchar *db_file, const gchar *city_id);
 
+/**
+ * check wheather schema_id exists or not
+ */
+gboolean
+check_schema(const gchar *schema_id);
+
 #endif /* __CONFIRM_DIALOG_H__ */

@@ -280,3 +280,27 @@ static void _get_full_city(gpointer data, const gchar **result, gint row, gint c
 		*((gchar **)data) = g_strdup_printf("%s>%s>%s", p, c, t);
 	}
 }
+
+gboolean check_schema(const gchar *schema_id)
+{
+	const gchar * const *list;
+	gint i;
+
+	if (schema_id == NULL)
+		return FALSE;
+
+	list = g_settings_list_schemas();
+	if (list == NULL)
+		return FALSE;
+
+	i = 0;
+	while(list[i])
+	{
+		if (g_strcmp0(list[i], schema_id) == 0)
+			return TRUE;
+
+		i++;
+	}
+
+	return FALSE;
+}

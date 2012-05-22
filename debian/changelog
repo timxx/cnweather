@@ -1,4 +1,16 @@
-cnweather (0.2.0~oneiric) oneiric; urgency=low
+cnweather (0.2.1~precise) precise; urgency=low
+
+  * Fixed a bug
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 22 May 2012 23:49:57 +0800
+
+cnweather (0.2.1~oneiric) oneiric; urgency=low
+
+  * Fixed a bug
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 22 May 2012 23:44:56 +0800
+
+cnweather (0.2.1~oneiric) oneiric; urgency=low
 
   * oneiric
 

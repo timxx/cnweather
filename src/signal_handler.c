@@ -164,6 +164,9 @@ static void check_and_set_sys_tray()
 	gint len;
 	gint i;
 
+	if (!check_schema("com.canonical.Unity.Panel"))
+		return ;
+
 	sett = g_settings_new("com.canonical.Unity.Panel");
 	if (sett == NULL)
 		return ;
