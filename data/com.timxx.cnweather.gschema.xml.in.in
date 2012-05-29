@@ -74,5 +74,10 @@
 		<key name="img3" type="as">
 			<default>[]</default>
 		</key>
+		<key type="as" name="temp">
+			<default>[]</default>
+			<_summary>real time temperature</_summary>
+			<_description>real time temperature for current day</_description>
+		</key>
 	</schema>
 </schemalist>

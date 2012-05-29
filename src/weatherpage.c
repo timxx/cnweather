@@ -90,6 +90,9 @@ void weather_page_set_weather_info(WeatherPage *page, WeatherInfo *wi)
 		weather_widget_set_temperature(WEATHER_WIDGET(priv->widget[i]), wi->weather[i].temperature);
 		weather_widget_set_wind(WEATHER_WIDGET(priv->widget[i]), wi->weather[i].wind);
 	}
+
+	weather_widget_set_temperature(WEATHER_WIDGET(priv->widget[0]), wi->temp == NULL ? "0" : wi->temp);
+	gtk_widget_set_tooltip_text(priv->widget[0], wi->weather[0].temperature);
 }
 
 void weather_page_set_image(WeatherPage *page, gint widget, const gchar *uri)
@@ -124,9 +127,16 @@ void weather_page_get_weather_info(WeatherPage *page, WeatherInfo *wi)
 
 	for(i=0; i<TOTAL_WIDGETS; ++i)
 	{
-		wi->weather[i].temperature = g_strdup(
-			weather_widget_get_temperature(WEATHER_WIDGET(priv->widget[i]))
-			);
+		if (i==0)
+		{
+			wi->weather[i].temperature = gtk_widget_get_tooltip_text(priv->widget[0]);
+			
+			wi->temp = g_strdup(weather_widget_get_temperature(WEATHER_WIDGET(priv->widget[i])));
+		}
+		else
+		{
+			wi->weather[i].temperature = g_strdup(weather_widget_get_temperature(WEATHER_WIDGET(priv->widget[i])));
+		}
 
 		wi->weather[i].weather = g_strdup(
 			weather_widget_get_weather(WEATHER_WIDGET(priv->widget[i]))

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([cnweather], [0.2.1], [weitianleung@gmail.com], [cnweather], [https://github.com/timxx/cnweather])
+AC_INIT([cnweather], [0.2.2], [weitianleung@gmail.com], [cnweather], [https://github.com/timxx/cnweather])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE()

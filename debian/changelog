@@ -1,3 +1,21 @@
+cnweather (0.2.2~oneiric) oneiric; urgency=low
+
+  * Add real time temperature
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 29 May 2012 17:11:35 +0800
+
+cnweather (0.2.2~precise) precise; urgency=low
+
+  * Add real time temperature
+
+ -- Weitian Leung <weitianleung@gmail.com>  Tue, 29 May 2012 17:10:01 +0800
+
+cnweather (0.2.1-1~precise) precise; urgency=low
+
+  * Repack for precise
+
+ -- Weitian Leung <weitianleung@gmail.com>  Sun, 27 May 2012 22:45:24 +0800
+
 cnweather (0.2.1~precise) precise; urgency=low
 
   * Fixed a bug

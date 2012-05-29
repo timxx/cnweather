@@ -12,6 +12,8 @@ typedef struct
     gchar*	city_id;
 	gchar*	city;
 
+	gchar*	temp;	/* temperature for current day */
+
     struct
     {
         gchar*	temperature;

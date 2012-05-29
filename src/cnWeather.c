@@ -666,12 +666,12 @@ static gboolean update_tray(cnWeather *window)
 	weather_info_from_page(window, index, wi);
 
 	buffer = g_strdup_printf(
-				"<b>%s</b>\n"
+				"<b>%s</b>\t%s\n"
 				"%s\n"
 				"%s\n"
 				"%s"
 				,
-				wi->city,
+				wi->city, wi->temp,
 				wi->weather[0].weather,
 				wi->weather[0].temperature,
 				wi->weather[0].wind
@@ -1795,7 +1795,15 @@ static void set_weather_query_page(cnWeather *window, WeatherInfo *wi)
 
 		g_snprintf(name, 30, "%s%d", names[1], i+1);
 		widget = builder_get_widget(priv->ui_weather, name);
-		gtk_label_set_text(GTK_LABEL(widget), wi->weather[i].temperature);
+		if (i == 0)
+		{
+			gtk_label_set_text(GTK_LABEL(widget), wi->temp == NULL ? "0" : wi->temp);
+			gtk_widget_set_tooltip_text(widget, wi->weather[i].temperature);
+		}
+		else
+		{
+			gtk_label_set_text(GTK_LABEL(widget), wi->weather[i].temperature);
+		}
 
 		g_snprintf(name, 30, "%s%d", names[2], i+1);
 		widget = builder_get_widget(priv->ui_weather, name);
@@ -1850,7 +1858,16 @@ void weather_window_add_query_city(cnWeather *window)
 
 		g_snprintf(name, 30, "%s%d", names[1], i+1);
 		widget = builder_get_widget(priv->ui_weather, name);
-		 wi->weather[i].temperature = g_strdup(gtk_label_get_text(GTK_LABEL(widget)));
+
+		if (i == 0)
+		{
+			wi->temp = g_strdup(gtk_label_get_text(GTK_LABEL(widget)));
+			wi->weather[i].temperature = gtk_widget_get_tooltip_text(widget);
+		}
+		else
+		{
+			wi->weather[i].temperature = g_strdup(gtk_label_get_text(GTK_LABEL(widget)));
+		}
 
 		g_snprintf(name, 30, "%s%d", names[2], i+1);
 		widget = builder_get_widget(priv->ui_weather, name);

@@ -75,6 +75,7 @@ gboolean w_settings_get_weather(wSettings *sett, GList **list)
 	gchar **wind[3];
 	gchar **temp[3];
 	gchar **img[3];
+	gchar **rtemp;
 
 	gchar name[10];
 	int i;
@@ -90,6 +91,16 @@ gboolean w_settings_get_weather(wSettings *sett, GList **list)
 	{
 		g_strfreev(city_id);
 		return TRUE;
+	}
+
+	rtemp = g_settings_get_strv(G_SETTINGS(sett), "temp");
+	i = g_strv_length(city_id);
+	if (i != g_strv_length(rtemp))
+	{
+		// temp is newly added
+		// to avoid 'Segmentation fault'
+		g_strfreev(rtemp);
+		rtemp = (gchar **)g_malloc0(i);
 	}
 
 	for(i=0; i<3; ++i)
@@ -120,6 +131,7 @@ gboolean w_settings_get_weather(wSettings *sett, GList **list)
 
 		wi->city_id = city_id[i];
 		wi->city = city[i];
+		wi->temp = rtemp[i];
 
 		for(j=0; j<3; ++j)
 		{
@@ -153,6 +165,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 	gchar **wind[3] = {NULL};
 	gchar **weather[3] = {NULL};
 	gchar **img[3] = {NULL};
+	gchar **rtemp = NULL;
 
 	g_return_val_if_fail(sett != NULL, FALSE);
 
@@ -166,6 +179,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 			return FALSE;
 
 		city	= (gchar **)g_malloc0(count);
+		rtemp	= (gchar **)g_malloc0(count);
 
 		for(i=0; i<3; ++i)
 		{
@@ -185,6 +199,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 
 		city_id[i] = wi->city_id;
 		city[i] = wi->city;
+		rtemp[i] = wi->temp;
 
 		for(j=0; j<3; ++j)
 		{
@@ -201,6 +216,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 
 	g_settings_set_strv(G_SETTINGS(sett), "city", (const gchar * const*)city);
 	g_settings_set_strv(G_SETTINGS(sett), "city-id", (const gchar * const*)city_id);
+	g_settings_set_strv(G_SETTINGS(sett), "temp", (const gchar * const*)rtemp);
 
 	for(i=0; i<3; ++i)
 	{
@@ -221,6 +237,7 @@ gboolean w_settings_set_weather(wSettings *sett, GList *list)
 	{
 		g_free(city_id);
 		g_free(city);
+		g_free(rtemp);
 
 		for(i=0; i<3; ++i)
 		{

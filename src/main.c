@@ -338,10 +338,11 @@ static void	print_weather_info(WeatherInfo *wi)
 
 	g_print(_("City: %s\n"
 			"Weather: %s\n"
-			"Temperature: %s\n"
+			"Temperature: %s ( %s  )\n"
 			"Wind: %s\n"),
 				wi->city,
 				wi->weather[0].weather,
+				wi->temp,
 				wi->weather[0].temperature,
 				wi->weather[0].wind
 		   );

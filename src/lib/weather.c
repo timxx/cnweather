@@ -35,6 +35,7 @@ static const gchar *_city_list_url = "http://www.weather.com.cn/data/list3/city"
 static const gchar *_weather_data_url = "http://m.weather.com.cn/data/";
 static const gchar *_default_city_url = "http://61.4.185.48:81/g";
 static const gchar *_city_db_url = "http://cloud.github.com/downloads/timxx/cnweather/cities.db";
+static const gchar *_cur_weather_data_url = "http://www.weather.com.cn/data/sk/";
 
 static size_t write_func(void *ptr, size_t size, size_t nmemb, void *data);
 static void parse_data(gchar *data, size_t len, WeatherInfo *wi);
@@ -54,6 +55,9 @@ static void insert_item_to_town(sqlite3 *db, gchar *id, gchar *name, gchar *city
 static gint exe_sql(sqlite3 *db, gchar *sql);
 
 static size_t write_file_func(void *ptr, size_t size, size_t nmemb, void *data);
+
+static gint
+get_real_time_temperature(wSession *ws, const gchar *city_id, gchar **temp);
 
 wSession* weather_open()
 {
@@ -120,7 +124,14 @@ int weather_get(wSession *ws,
 
 	if (ret == CURLE_OK)
 	{
+		gchar *temp = NULL;
 		parse_data(ws->buffer, ws->length, wi);
+
+		if (get_real_time_temperature(ws,  wi->city_id, &temp) == 0 && temp != NULL)
+		{
+			wi->temp = g_strdup_printf("%s ℃", temp);
+			g_free(temp);
+		}
 	}
 
     return ret;
@@ -279,6 +290,7 @@ WeatherInfo *weather_new_info()
 		wi->weather[i].img = 0;
 	}
 
+	wi->temp = NULL;
 	wi->city_id = NULL;
 	wi->city = NULL;
 
@@ -293,22 +305,14 @@ void weather_free_info(WeatherInfo *wi)
 
 		for(i=0; i<3; ++i)
 		{
-			if (wi->weather[i].temperature)
-				g_free(wi->weather[i].temperature);
-
-			if (wi->weather[i].weather)
-				g_free(wi->weather[i].weather);
-
-			if (wi->weather[i].wind)
-				g_free(wi->weather[i].wind);
+			g_free(wi->weather[i].temperature);
+			g_free(wi->weather[i].weather);
+			g_free(wi->weather[i].wind);
 		}
 
-		if (wi->city){
-			g_free(wi->city);
-		}
-		if (wi->city_id){
-			g_free(wi->city_id);
-		}
+		g_free(wi->city);
+		g_free(wi->city_id);
+		g_free(wi->temp);
 
 		g_free(wi);
 	}
@@ -666,4 +670,29 @@ static size_t write_file_func(void *ptr, size_t size, size_t nmemb, void *data)
 	fwrite(ptr, size, nmemb, fp);
 
     return real_size;
+}
+
+static gint
+get_real_time_temperature(wSession *ws, const gchar *city_id, gchar **temp)
+{
+	gchar url[250];
+    gint ret = CURLE_OK;
+
+	if (ws->buffer != NULL)
+	{
+		g_free(ws->buffer);
+		ws->buffer = NULL;
+		ws->length = 0;
+	}
+
+    snprintf(url, 250, "%s%s.html", _cur_weather_data_url, city_id);
+
+	ret = get_url_data(ws, url);
+
+	if (ret == CURLE_OK)
+	{
+		ret = get_value(ws->buffer, ws->length, "temp", temp);
+	}
+
+    return ret;
 }
