@@ -1,3 +1,15 @@
+cnweather (0.2.2-1~oneiric) oneiric; urgency=low
+
+  * Forgot to update tray...
+
+ -- Weitian Leung <weitianleung@gmail.com>  Wed, 30 May 2012 10:24:22 +0800
+
+cnweather (0.2.2-1~precise) precise; urgency=low
+
+  * Forgot to update tray...
+
+ -- Weitian Leung <weitianleung@gmail.com>  Wed, 30 May 2012 10:23:39 +0800
+ 
 cnweather (0.2.2~oneiric) oneiric; urgency=low
 
   * Add real time temperature

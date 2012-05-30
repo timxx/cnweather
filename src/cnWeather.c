@@ -1676,6 +1676,9 @@ static void update_page(cnWeather *window, gint page, WeatherInfo *wi)
 			}
 		}
 	}
+	/* update tray tooltips */
+	if (page == gtk_notebook_get_current_page(GTK_NOTEBOOK(window->priv->nb_weather)))
+		update_tray(window);
 }
 
 static gpointer get_default_city_thread(gpointer data)
