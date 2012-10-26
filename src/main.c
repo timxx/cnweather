@@ -75,14 +75,10 @@ int main(int argc, char **argv)
 		}
 	}
 
+#if !GLIB_CHECK_VERSION(2, 32, 0)
 	if (!g_thread_supported())
-#if GLIB_CHECK_VERSION(2, 32, 0)
-		g_warning("gthread not supported!\n");
-#else
 		g_thread_init(NULL);
 #endif
-
-	gdk_threads_init();
 
     app = gtk_application_new("org.timxx.cnWeather", 0);
     if (app == NULL)

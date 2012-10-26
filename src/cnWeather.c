@@ -55,6 +55,31 @@ struct _cnWeatherPrivate
 	gboolean		cb_change_by_fill;	/* flag to avoid fill_by_xx make a city change */
 };
 
+typedef struct
+{
+	cnWeather *window;
+	WeatherInfo *weather;
+}WeatherQuery;
+
+typedef struct
+{
+	cnWeather *window;
+	gint code;
+}FailInfo;
+
+typedef struct
+{
+	cnWeather *window;
+	const gchar *result;
+}SearchResult;
+
+typedef struct
+{
+	cnWeather *window;
+	gint tab;
+	WeatherInfo *weather;
+}PageInfo;
+
 static void weather_window_init(cnWeather *window);
 static void weather_window_class_init(cnWeatherClass *klass);
 static void weather_window_finalize(GObject *obj);
@@ -107,7 +132,7 @@ static gboolean on_window_state(GtkWidget *widget,
 			GdkEventWindowState  *event,
 			gpointer   data);
 
-static void update_progress(cnWeather *window);
+static gboolean update_progress_idle(cnWeather *window);
 
 static void valid_window_size(cnWeather *window, gint *w, gint *h);
 static void valid_window_pos(cnWeather *window, gint *x, gint *y);
@@ -160,7 +185,7 @@ static void update_page(cnWeather *window, gint page, WeatherInfo *wi);
 
 static void	query_city_id(gpointer data, const gchar **result, gint row, gint col);
 
-static void set_weather_query_page(cnWeather *window, WeatherInfo *wi);
+static gboolean set_weather_query_page_idle(WeatherQuery *q);
 
 static void on_nb_weather_page_removed(GtkNotebook *notebook,
 			GtkWidget   *child,
@@ -181,9 +206,13 @@ static void update_pages_index(cnWeather *window);
 
 static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo *wi);
 
-static void show_get_weather_fail_info(cnWeather *window, gint code);
+static gboolean show_get_weather_fail_info_idle(FailInfo *info);
 
-static gboolean thread_finish(gpointer data);
+static gboolean set_search_result_idle(SearchResult *r);
+static gboolean append_weather_page_idle(WeatherQuery *q);
+static gboolean update_page_idle(PageInfo *page);
+static gboolean update_cb_idle(cnWeather *window);
+static gboolean turn_to_weather_page_idle(cnWeather *window);
 
 GType weather_window_get_type()
 {
@@ -324,7 +353,7 @@ static void weather_window_init(cnWeather *window)
 		}
 	}
 
-	update_progress(window);
+	update_progress_idle(window);
 	g_timeout_add(10, delay_load_settings, window);
 	g_timeout_add(500, delay_get_weather, window);
 }
@@ -467,9 +496,7 @@ static gpointer get_weather_thread(gpointer data)
 	priv->getting_weather = TRUE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	do
 	{
@@ -485,19 +512,21 @@ static gpointer get_weather_thread(gpointer data)
 
 		if (ret == 0)
 		{
-			gdk_threads_enter();
-			set_weather_query_page(window, wi);
-			gdk_threads_leave();
+			WeatherQuery *q = g_new(WeatherQuery, 1);
+			q->window = window;
+			q->weather = wi;
+
+			gdk_threads_add_idle((GSourceFunc)set_weather_query_page_idle, q);
 		}
 		else
 		{
-			gdk_threads_enter();
-			show_get_weather_fail_info(window, ret);
-			gdk_threads_leave();
+			FailInfo *info = g_new(FailInfo, 1);
+			info->window = window;
+			info->code = ret;
+			gdk_threads_add_idle((GSourceFunc)show_get_weather_fail_info_idle, info);
 		}
 	
 		weather_close(ws);
-		weather_free_info(wi);
 	}
 	while(0);
 
@@ -505,11 +534,7 @@ static gpointer get_weather_thread(gpointer data)
 	priv->getting_weather = FALSE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
-
-	g_idle_add(thread_finish, g_thread_self());
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	return NULL;
 }
@@ -519,7 +544,7 @@ static void search_city(cnWeather *window, const gchar *city)
 	cnWeatherPrivate *priv = window->priv;
 	gchar *sql = NULL;
 
-	update_progress(window);
+	update_progress_idle(window);
 
 	if (!weather_window_test_city(window, city))
 		return ;
@@ -548,7 +573,7 @@ static void search_city(cnWeather *window, const gchar *city)
 		g_free(sql);
 	}
 
-	update_progress(window);
+	update_progress_idle(window);
 }
 
 static gint	search_from_pages(cnWeather *window, const gchar *city)
@@ -586,44 +611,25 @@ static gpointer get_cities_db_thread(gpointer data)
 
 	priv->getting_db = TRUE;
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	status = weather_get_city_db(priv->db_file);
 	if (status == 0)
 	{
-		gdk_threads_enter();
-
-		priv->cb_change_by_fill = TRUE;
-
-		weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
-
-		// assume current page is preferences
-		weather_window_update_pref_cb_by_town(window,
-					weather_window_get_current_tab_title(window)
-					);
-
-		priv->cb_change_by_fill = FALSE;
-
-		gdk_threads_leave();
+		gdk_threads_add_idle((GSourceFunc)update_cb_idle, window);
 	}
 	else
 	{
-		gdk_threads_enter();
+		SearchResult *result = g_new(SearchResult, 1);
+		result->window = window;
+		result->result = _("Unable to get city database");
 
-		weather_window_set_search_result(window, _("Unable to get city database"));
-
-		gdk_threads_leave();
+		gdk_threads_add_idle((GSourceFunc)set_search_result_idle, result);
 	}
 
 	priv->getting_db = FALSE;
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
-
-	g_idle_add(thread_finish, g_thread_self());
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	return NULL;
 }
@@ -897,13 +903,13 @@ void weather_window_quit(cnWeather *window)
 	on_delete(GTK_WIDGET(window), NULL, NULL);
 }
 
-static void update_progress(cnWeather *window)
+static gboolean update_progress_idle(cnWeather *window)
 {
 	cnWeatherPrivate *priv;
 	gchar *tips[3] = { NULL };
 	gint count = 0;
 
-	g_return_if_fail( window != NULL && window->priv->spinner != NULL);
+	g_return_val_if_fail(window != NULL && window->priv->spinner != NULL, FALSE);
 
 	priv = window->priv;
 
@@ -939,6 +945,8 @@ static void update_progress(cnWeather *window)
 		}
 		gtk_spinner_start(GTK_SPINNER(priv->spinner));
 	}
+	
+	return FALSE;
 }
 
 void weather_window_update_cache(cnWeather *window)
@@ -1599,9 +1607,7 @@ static gpointer update_weather_thread(gpointer data)
 	priv->getting_weather = TRUE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	tab = 0;
 	while(p)
@@ -1615,17 +1621,21 @@ static gpointer update_weather_thread(gpointer data)
 		wi->city_id = g_strdup((gchar *)p->data);
 		if ((code = weather_get(ws, wi)) == 0)
 		{
-			gdk_threads_enter();
-			update_page(window, tab, wi);
-			gdk_threads_leave();
+			PageInfo *page = g_new(PageInfo, 1);
+			page->window = window;
+			page->tab = tab;
+			page->weather = weather_dup_info(wi);
+
+			gdk_threads_add_idle((GSourceFunc)update_page_idle, page);
 
 			list = g_list_append(list, wi);
 		}
 		else
 		{
-			gdk_threads_enter();
-			show_get_weather_fail_info(window, code);
-			gdk_threads_leave();
+			FailInfo *info = g_new(FailInfo, 1);
+			info->window = window;
+			info->code = code;
+			gdk_threads_add_idle((GSourceFunc)show_get_weather_fail_info_idle, info);
 		}
 
 		weather_close(ws);
@@ -1638,17 +1648,16 @@ static gpointer update_weather_thread(gpointer data)
 	{
 		w_settings_set_weather(window->priv->settings, list);
 		g_list_free_full(list, (GDestroyNotify)weather_free_info);
+
+		//
+		gdk_threads_add_idle((GSourceFunc)turn_to_weather_page_idle, window);
 	}
 
 	g_mutex_lock(priv->mutex);
 	priv->getting_weather = FALSE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
-
-	g_idle_add(thread_finish, g_thread_self());
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	return NULL;
 }
@@ -1698,9 +1707,7 @@ static gpointer get_default_city_thread(gpointer data)
 	priv->getting_weather = TRUE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	wi = weather_new_info();
 	ws = weather_open();
@@ -1709,9 +1716,10 @@ static gpointer get_default_city_thread(gpointer data)
 	{
 		GList *list = NULL;
 
-		gdk_threads_enter();
-		append_weather_page(window, wi);
-		gdk_threads_leave();
+		WeatherQuery *q = g_new(WeatherQuery, 1);
+		q->window = window;
+		q->weather = wi;
+		gdk_threads_add_idle((GSourceFunc)append_weather_page_idle, q);
 
 		list = g_list_append(list, wi);
 		if (list)
@@ -1722,23 +1730,19 @@ static gpointer get_default_city_thread(gpointer data)
 	}
 	else
 	{
-		gdk_threads_enter(); 
-		show_get_weather_fail_info(window, code);
-		gdk_threads_leave();
+			FailInfo *info = g_new(FailInfo, 1);
+			info->window = window;
+			info->code = code;
+			gdk_threads_add_idle((GSourceFunc)show_get_weather_fail_info_idle, info);
 	}
 
 	weather_close(ws);
-	weather_free_info(wi);
 
 	g_mutex_lock(priv->mutex);
 	priv->getting_weather = FALSE;
 	g_mutex_unlock(priv->mutex);
 
-	gdk_threads_enter();
-	update_progress(window);
-	gdk_threads_leave();
-
-	g_idle_add(thread_finish, g_thread_self());
+	gdk_threads_add_idle((GSourceFunc)update_progress_idle, window);
 
 	return NULL;
 }
@@ -1772,10 +1776,11 @@ static void	query_city_id(gpointer data, const gchar **result, gint row, gint co
 	*((gchar **)data) = g_strdup(result[col]);
 }
 
-static void set_weather_query_page(cnWeather *window, WeatherInfo *wi)
+static gboolean set_weather_query_page_idle(WeatherQuery *q)
 {
 	cnWeatherPrivate *priv;
 	GtkWidget *widget;
+	WeatherInfo *wi;
 	gint i;
 	static const gchar *names[] =
 	{
@@ -1783,7 +1788,8 @@ static void set_weather_query_page(cnWeather *window, WeatherInfo *wi)
 	};
 	gchar name[30];
 
-	priv = window->priv;
+	priv = q->window->priv;
+	wi = q->weather;
 
 	widget = builder_get_widget(priv->ui_weather, "label_city");
 	gtk_label_set_text(GTK_LABEL(widget), wi->city);
@@ -1812,7 +1818,7 @@ static void set_weather_query_page(cnWeather *window, WeatherInfo *wi)
 		widget = builder_get_widget(priv->ui_weather, name);
 		gtk_widget_set_tooltip_text(widget, wi->weather[i].wind);
 
-		image = get_theme_img_file(window, wi->weather[i].img);
+		image = get_theme_img_file(q->window, wi->weather[i].img);
 		if (image)
 		{
 			gtk_image_set_from_file(GTK_IMAGE(widget), image);
@@ -1821,7 +1827,12 @@ static void set_weather_query_page(cnWeather *window, WeatherInfo *wi)
 	}
 
 	// change to query result page
-	weather_window_set_page(window, PAGE_WEATHER_QUERY);
+	weather_window_set_page(q->window, PAGE_WEATHER_QUERY);
+
+	weather_free_info(wi);
+	g_free(q);
+
+	return FALSE;
 }
 
 void weather_window_add_query_city(cnWeather *window)
@@ -2098,28 +2109,72 @@ static void weather_info_from_page(cnWeather *window, gint page_num, WeatherInfo
 	wi->city = g_strdup(weather_tab_get_title(WEATHER_TAB(widget)));
 }
 
-static void show_get_weather_fail_info(cnWeather *window, gint code)
+static gboolean show_get_weather_fail_info_idle(FailInfo *info)
 {
-	gchar *info;
+	gchar *msg;
 
-	info = g_strdup_printf("<b>Couldn't get weather information:</b>\n"
+	msg = g_strdup_printf("<b>Couldn't get weather information:</b>\n"
 				"<i>%s</i>",
-				curl_easy_strerror(code)
+				curl_easy_strerror(info->code)
 				);
 
-	weather_window_set_search_result(window, info);
+	weather_window_set_search_result(info->window, msg);
 
 	g_free(info);
+
+	return FALSE;
 }
 
-static gboolean thread_finish(gpointer data)
+static gboolean set_search_result_idle(SearchResult *r)
 {
-	if (data)
-	{
-#if GLIB_CHECK_VERSION(2, 32, 0)
-		g_thread_unref((GThread *)data);
-#endif
-	}
+	weather_window_set_search_result(r->window, r->result);
+
+	g_free(r);
+
+	return FALSE;
+}
+
+static gboolean append_weather_page_idle(WeatherQuery *q)
+{
+	append_weather_page(q->window, q->weather);
+
+	weather_free_info(q->weather);
+	g_free(q);
+
+	return FALSE;
+}
+
+static gboolean update_page_idle(PageInfo *page)
+{
+	update_page(page->window, page->tab, page->weather);
+
+	weather_free_info(page->weather);
+	g_free(page);
+
+	return FALSE;
+}
+
+static gboolean update_cb_idle(cnWeather *window)
+{
+	cnWeatherPrivate *priv = window->priv;
+
+	priv->cb_change_by_fill = TRUE;
+
+	weather_window_update_pref_cb(window, CB_PROVINCE, NULL);
+
+	// assume current page is preferences
+	weather_window_update_pref_cb_by_town(window,
+			weather_window_get_current_tab_title(window)
+			);
+	
+	priv->cb_change_by_fill = FALSE;
+
+	return FALSE;
+}
+
+static gboolean turn_to_weather_page_idle(cnWeather *window)
+{
+	weather_window_set_page(window, PAGE_WEATHER);
 
 	return FALSE;
 }
