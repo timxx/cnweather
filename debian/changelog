@@ -1,3 +1,21 @@
+cnweather (0.2.3-1~oneiric) oneiric; urgency=low
+
+  * Remove deprecated functions.
+
+ -- Weitian Leung <weitianleung@gmail.com>  Fri, 26 Oct 2012 22:48:03 +0800
+ 
+cnweather (0.2.3-1~precise) precise; urgency=low
+
+  * Remove deprecated functions.
+
+ -- Weitian Leung <weitianleung@gmail.com>  Fri, 26 Oct 2012 22:47:42 +0800
+ 
+cnweather (0.2.3-1~quantal) quantal; urgency=low
+
+  * Remove deprecated functions.
+
+ -- Weitian Leung <weitianleung@gmail.com>  Fri, 26 Oct 2012 22:47:10 +0800
+ 
 cnweather (0.2.3~oneiric) oneiric; urgency=low
 
   * Remove deprecated functions.
