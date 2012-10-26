@@ -318,6 +318,33 @@ void weather_free_info(WeatherInfo *wi)
 	}
 }
 
+WeatherInfo *weather_dup_info(WeatherInfo *wi)
+{
+	WeatherInfo *w = NULL;
+	gint i;
+
+	if (wi == NULL)
+		return NULL;
+
+	w = (WeatherInfo*)g_malloc(sizeof(WeatherInfo));
+	if (w == NULL)
+		return NULL;
+
+	for(i=0; i<3; i++)
+	{
+		w->weather[i].temperature = g_strdup(wi->weather[i].temperature);
+		w->weather[i].weather = g_strdup(wi->weather[i].weather);
+		w->weather[i].wind = g_strdup(wi->weather[i].wind);
+		w->weather[i].img = wi->weather[i].img;
+	}
+
+	w->temp = g_strdup(wi->temp);
+	w->city_id = g_strdup(wi->city_id);
+	w->city = g_strdup(wi->city);
+
+	return w;
+}
+
 static gchar* get_default_city_id()
 {
 	wSession *ws;

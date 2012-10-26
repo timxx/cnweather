@@ -83,6 +83,11 @@ WeatherInfo *weather_new_info();
 void weather_free_info(WeatherInfo *wi);
 
 /**
+ * dup @wi
+ */
+WeatherInfo *weather_dup_info(WeatherInfo *wi);
+
+/**
  * get city list from www.weather.com.cn
  * and insert into database
  * the slower one
