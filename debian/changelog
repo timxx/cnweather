@@ -1,3 +1,21 @@
+cnweather (0.2.4~quantal) quantal; urgency=low
+
+  * remove wrongly used gdk_threads_add_idle
+
+ -- Weitian Leung <weitianleung@gmail.com>  Thu, 01 Nov 2012 09:22:53 +0800
+ 
+cnweather (0.2.4~precise) precise; urgency=low
+
+  * remove wrongly used gdk_threads_add_idle
+
+ -- Weitian Leung <weitianleung@gmail.com>  Thu, 01 Nov 2012 09:22:24 +0800
+ 
+cnweather (0.2.4~oneiric) oneiric; urgency=low
+
+  * remove wrongly used gdk_threads_add_idle
+
+ -- Weitian Leung <weitianleung@gmail.com>  Thu, 01 Nov 2012 09:21:49 +0800
+ 
 cnweather (0.2.3-1~oneiric) oneiric; urgency=low
 
   * Remove deprecated functions.
@@ -10,7 +28,7 @@ cnweather (0.2.3-1~precise) precise; urgency=low
 
  -- Weitian Leung <weitianleung@gmail.com>  Fri, 26 Oct 2012 22:47:42 +0800
  
-cnweather (0.2.3-1~quantal) quantal; urgency=low
+cnweather (0.2.3-1~quantal) precise; urgency=low
 
   * Remove deprecated functions.
 
