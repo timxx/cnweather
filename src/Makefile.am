@@ -22,5 +22,7 @@ AM_CFLAGS =	\
 		-DTHEME_DIR='"$(pkgdatadir)/themes"'
 
 cnweather_LDADD =	\
-	@GTK_LIBS@	\
+	@GTK_LIBS@		\
+	@LIBCURL_LIBS@	\
+	@SQLITE3_LIBS@	\
 	lib/libweather.la

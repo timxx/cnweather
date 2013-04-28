@@ -182,7 +182,9 @@ static int do_xterm(int argc, char **argv)
 		}
 	}
 
+#if !GLIB_CHECK_VERSION(2,36,0)
 	g_type_init();
+#endif
 
 	sett = w_settings_new();
 	if (sett == NULL)
